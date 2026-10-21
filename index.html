@@ -308,6 +308,18 @@ table.list td b{color:#1d3554}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
+/* ---------- ảnh kèm theo ---------- */
+.imgdrop{display:flex;gap:14px;align-items:center;border:1.5px dashed #c9d6e6;border-radius:14px;padding:14px 16px;background:#fbfdff;cursor:pointer;transition:.15s}
+.imgdrop:hover,.imgdrop.over{border-color:#4d82ed;background:#f0f6ff}
+.imgdrop .dicon{width:44px;height:44px;border-radius:12px;background:#fff1e3;color:#e8770e;display:grid;place-items:center;flex:none}
+.imgdrop b{display:block;font-size:14px}.imgdrop small{color:var(--muted);font-size:12px}
+.thumbs{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 4px}
+.thumb{position:relative;width:132px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.thumb img{display:block;width:100%;height:92px;object-fit:cover;background:#f3f6fa}
+.thumb span{display:block;font-size:11px;color:var(--muted);padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb button{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(15,23,42,.65);color:#fff;cursor:pointer;font-size:13px;line-height:26px}
+.thumb button:hover{background:#b42318}
+
 /* ---------- phần cuối trang (trang chủ) ---------- */
 body:not([data-step="1"]) .extras{display:none}
 .extras{display:flex;flex-direction:column;gap:18px;margin-top:22px}
@@ -629,6 +641,29 @@ body:not([data-step="1"]) .extras{display:none}
           <div id="progText" style="font-size:13.5px;color:var(--muted)">Chưa bắt đầu.</div>
         </div>
       </div>
+      <div class="card" id="imgCard" style="margin-top:18px">
+        <div class="bhead"><div class="bicon violet"><svg class="i"><use href="#i-image"/></svg></div><div><h3>Ảnh kèm theo email <span style="font-weight:500;color:var(--muted);font-size:13px">(không bắt buộc)</span></h3><p class="sub">Ví dụ thiệp chúc mừng năm mới, thông báo của trường… Ảnh được gửi cùng phiếu lương cho mọi người. Tối đa 3 ảnh, tự thu nhỏ cho nhẹ.</p></div></div>
+        <div class="split">
+          <div>
+            <label class="imgdrop" id="imgDrop">
+              <input type="file" id="imgFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
+              <div class="dicon"><svg class="i"><use href="#i-upload"/></svg></div>
+              <div><b>Chọn hoặc kéo thả ảnh vào đây</b><small>JPG, PNG, GIF — tối đa 3 ảnh</small></div>
+            </label>
+            <div class="thumbs" id="thumbs"></div>
+            <p class="sub" id="imgInfo" style="margin:4px 0 0">Chưa có ảnh nào. Email sẽ chỉ có phiếu lương.</p>
+          </div>
+          <div>
+            <label class="field"><span>Cách hiện ảnh</span><select data-k="mail.imgMode">
+              <option value="inline">Hiện ngay trong nội dung email (khuyên dùng)</option>
+              <option value="attach">Đính kèm thành file, cạnh file phiếu lương</option></select></label>
+            <label class="field"><span>Vị trí ảnh trong email</span><select data-k="mail.imgPos">
+              <option value="bottom">Dưới lời nhắn</option>
+              <option value="top">Trên lời nhắn</option></select></label>
+            <label class="check"><input type="checkbox" data-k="mail.imgOnCorr"><span>Kèm ảnh cả khi gửi bản điều chỉnh<span class="reason">Thường không cần, vì người nhận đã có ảnh ở lần gửi đầu.</span></span></label>
+          </div>
+        </div>
+      </div>
       <div class="card" id="corrCard" style="margin-top:18px">
         <div class="bhead"><div class="bicon orange"><svg class="i"><use href="#i-send"/></svg></div><div><h3>Gửi bản điều chỉnh</h3><p class="sub">Đã gửi nhưng phiếu sai (thiếu tiền, sai khoản…)? Sửa file Excel, tải lại ở <a href="#" data-go="2">Bước 2</a>, rồi gửi lại cho đúng người cần. Gửi lại bao nhiêu lần cũng được.</p></div></div>
         <div class="note info" id="corrInfo">Chưa có dữ liệu.</div>
@@ -827,7 +862,7 @@ const DEF = {
   mail: { senderName: 'Phòng Kế toán', subject: 'Phiếu tính lương {ky_luong} - {ho_ten}',
           body: 'Kính gửi Thầy/Cô {ho_ten},\n\nPhòng Kế toán {don_vi} gửi Thầy/Cô phiếu tính lương {ky_luong} trong file PDF đính kèm.\nMật khẩu mở file: {goi_y_mat_khau}.\n\nNếu có thắc mắc, Thầy/Cô vui lòng phản hồi email này.\n\nTrân trọng,\n{nguoi_gui}',
           protect: true, hint: '6 số cuối số CCCD của Thầy/Cô', delay: 3,
-          corrPrefix: '[ĐIỀU CHỈNH] ',
+          corrPrefix: '[ĐIỀU CHỈNH] ', imgMode: 'inline', imgPos: 'bottom', imgOnCorr: false,
           corrNote: 'Phòng Kế toán gửi lại phiếu lương đã được điều chỉnh. Bản này thay thế bản đã gửi trước đó, Thầy/Cô vui lòng sử dụng bản này.' },
   google: { clientId: '' },
   map: null
@@ -1267,16 +1302,22 @@ function richLine(t) {
   const out = []; t.split(/(\*\*[^*]+\*\*)/).forEach(p => { if (!p) return; const b = /^\*\*[^*]+\*\*$/.test(p); out.push({ text: b ? p.slice(2, -2) : p, bold: b }); });
   return out.length ? out : [{ text: ' ' }];
 }
-function infoLines(info) {
+function infoGrid(info, z) {
   const items = info.map(([l, v]) => [l, v || '']).filter(([, v]) => v !== '');
   const iTk = items.findIndex(([l]) => /so tk|tai khoan|stk/.test(norm(l))), iBank = items.findIndex(([l]) => /^(ngan hang|nh)$/.test(norm(l)));
   if (iTk >= 0 && iBank >= 0) { items[iTk] = [items[iTk][0], items[iTk][1] + ' ' + items[iBank][1]]; items.splice(iBank, 1); }
-  const len = ([l, v]) => l.length + v.length + 4, lines = [];
-  if (items.length) lines.push(items.splice(0, Math.min(2, items.length)));
-  let cur = [], n = 0;
-  for (const it of items) { const L = len(it) + (cur.length ? 5 : 0); if (cur.length && n + L > 78) { lines.push(cur); cur = []; n = 0; } cur.push(it); n += len(it) + (cur.length > 1 ? 5 : 0); }
-  if (cur.length) lines.push(cur);
-  return lines.map(line => ({ text: line.flatMap(([l, v], i) => [...(i ? [{ text: '   -   ', color: '#7a8aa3' }] : []), { text: l + '  :  ', color: '#33445e' }, { text: v, color: '#111c2e' }]), margin: [0, 1.5, 0, 1.5] }));
+  if (!items.length) return null;
+  const cols = items.length <= 4 ? 2 : 3, rows = Math.ceil(items.length / cols), body = [];
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const it = items[r * cols + c];
+      row.push(it ? { text: it[0], color: '#4a5b75' } : '', it ? { text: ':', color: '#4a5b75' } : '', it ? { text: it[1], color: '#0f1b2d', bold: true } : '');
+    }
+    body.push(row);
+  }
+  const widths = []; for (let c = 0; c < cols; c++) widths.push('auto', 8, '*');
+  return { rows, node: { table: { widths, body }, layout: { hLineWidth: () => 0, vLineWidth: () => 0, paddingTop: () => z(2.5), paddingBottom: () => z(2.5), paddingLeft: (i) => i % 3 === 0 && i ? 18 : (i % 3 === 0 ? 0 : 2), paddingRight: () => 2 } } };
 }
 function pageDeco(cur, s) {
   const W = s.width, H = s.height;
@@ -1290,15 +1331,15 @@ function pageDeco(cur, s) {
 function buildDoc(e, protect, corr) {
   const o = S.org, W = 842 - 2 * 36, logo = logoData();
   const titleTxt = `${o.title || ''} ${o.period || ''}`.trim() + (o.note ? '  ' + o.note.trim() : '');
-  const lines = infoLines(e.info);
+  const infoRows = Math.ceil(Math.max(0, e.info.filter(([, v]) => v).length - 1) / 3) || (e.info.some(([, v]) => v) ? 1 : 0);
   const n = Math.max(e.inc.length, e.ded.length);
   const footLines = String(o.footer || '').split(/\r?\n/).filter((l, i, arr) => l.trim() || (i > 0 && i < arr.length - 1));
   // Ước lượng chiều cao để phiếu luôn nằm gọn trên 1 trang A4 ngang
   const wrap = (t, cpl) => Math.max(1, Math.ceil(String(t).length / cpl));
-  const est = 76 + 46 + (lines.length ? lines.length * 16.5 + 12 : 0) + (n + 2) * 23.5 + 30
+  const est = 76 + 46 + (infoRows ? infoRows * 18 + 14 : 0) + (n + 2) * 23.5 + 30
     + (e.note ? wrap('Ghi chú:   ' + e.note, 118) * 15.5 + 4 : 0)
     + (footLines.length ? footLines.reduce((a, l) => a + wrap(l, 124), 0) * 15 + 20 : 0);
-  const avail = 595 - 2 * 24 - 6, k = Math.max(0.68, Math.min(1, avail / est)), z = v => Math.round(v * k * 10) / 10;
+  const avail = 595 - 2 * 24 - 6, k = Math.max(0.66, Math.min(1, avail * 0.94 / est)), z = v => Math.round(v * k * 10) / 10;
   const amt = (v, bold) => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right', bold: !!bold });
   const tW = Math.min(W - 120, Math.max(380, titleTxt.length * z(11.2) + 60));
   const header = { columns: [
@@ -1325,7 +1366,7 @@ function buildDoc(e, protect, corr) {
   const content = [
     header,
     title,
-    lines.length ? { table: { widths: ['*'], body: [[{ stack: lines, fillColor: '#eef4fb', margin: [12, z(4), 8, z(4)] }]] }, layout: 'noBorders', margin: [0, z(9), 0, 0] } : null,
+    (() => { const g = infoGrid(e.info, z); return g ? { table: { widths: ['*'], body: [[{ stack: [g.node], fillColor: '#eef4fb', margin: [14, z(5), 10, z(5)] }]] }, layout: 'noBorders', margin: [0, z(9), 0, 0] } : null; })(),
     table,
     { text: [{ text: `${o.netLabel || 'Còn lại'}  :   `, bold: true, fontSize: z(14), color: NAVY }, { text: fmtMoney(e.net), bold: true, fontSize: z(18), color: BLUE }], margin: [10, z(8), 0, 0] },
     e.note ? { text: [{ text: 'Ghi chú:   ', color: '#33445e' }, { text: e.note }], margin: [10, z(3), 0, 0] } : null,
@@ -1440,18 +1481,86 @@ function fillTpl(tpl, e) {
   const v = { ho_ten: e.name, ky_luong: S.org.period, don_vi: S.org.name, nguoi_gui: S.mail.senderName, goi_y_mat_khau: S.mail.hint, con_lai: fmtMoney(e.net), stt: e.stt };
   return t.replace(/\{(\w+)\}/g, (m, k) => k in v ? (v[k] ?? '') : m);
 }
+/* ---- ảnh kèm theo (giữ trong IndexedDB của trình duyệt) ---- */
+let EXTRA = [];
+const IDB = { db: null,
+  open() { return this.db ||= new Promise((res, rej) => { try { const r = indexedDB.open('phieu_luong', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); },
+  async get(k) { try { const db = await this.open(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(undefined); }); } catch (e) { return undefined; } },
+  async set(k, v) { try { const db = await this.open(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); return true; } catch (e) { return false; } } };
+IDB.get('extraImages').then(v => { if (Array.isArray(v)) { EXTRA = v; renderThumbs(); } });
+function saveExtra() { IDB.set('extraImages', EXTRA).then(ok => { if (!ok) toast('Trình duyệt không cho lưu ảnh; ảnh chỉ giữ đến khi tải lại trang.'); }); }
+function fileToImage(f) {
+  return new Promise((res, rej) => {
+    const rd = new FileReader();
+    rd.onerror = () => rej(new Error('Không đọc được ảnh'));
+    rd.onload = () => {
+      if (f.type === 'image/gif' && f.size <= 2.5e6) return res({ name: f.name, type: 'image/gif', b64: rd.result.split(',')[1], size: f.size });
+      const img = new Image();
+      img.onerror = () => rej(new Error('File không phải ảnh hợp lệ'));
+      img.onload = () => {
+        const M = 1600, sc = Math.min(1, M / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+        const url = c.toDataURL('image/jpeg', 0.86), b64 = url.split(',')[1];
+        res({ name: f.name.replace(/\.[^.]+$/, '') + '.jpg', type: 'image/jpeg', b64, size: Math.round(b64.length * 0.75) });
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f);
+  });
+}
+async function addImages(files) {
+  const list = [...files].filter(f => /^image\//.test(f.type));
+  if (!list.length) return toast('Hãy chọn file ảnh (JPG, PNG, GIF).');
+  for (const f of list) {
+    if (EXTRA.length >= 3) { toast('Tối đa 3 ảnh.'); break; }
+    try { EXTRA.push(await fileToImage(f)); } catch (err) { toast(err.message); }
+  }
+  saveExtra(); renderThumbs();
+}
+function renderThumbs() {
+  const box = $('#thumbs'); if (!box) return;
+  box.innerHTML = EXTRA.map((im, i) => `<div class="thumb"><img src="data:${im.type};base64,${im.b64}" alt=""><span title="${esc(im.name)}">${esc(im.name)} · ${Math.round(im.size / 1024)} KB</span><button type="button" data-rmimg="${i}" title="Bỏ ảnh này" aria-label="Bỏ ảnh">✕</button></div>`).join('');
+  const kb = Math.round(EXTRA.reduce((a, b) => a + b.size, 0) / 1024);
+  $('#imgInfo').textContent = EXTRA.length ? `${EXTRA.length} ảnh (${kb} KB) sẽ được gửi kèm mỗi email. Gửi thử để xem trước trong hộp thư.` : 'Chưa có ảnh nào. Email sẽ chỉ có phiếu lương.';
+  if ($('#p4').classList.contains('show')) renderSend();
+}
+$('#imgFile').addEventListener('change', e => { addImages(e.target.files); e.target.value = ''; });
+const imgDrop = $('#imgDrop');
+['dragenter', 'dragover'].forEach(ev => imgDrop.addEventListener(ev, e => { e.preventDefault(); imgDrop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => imgDrop.addEventListener(ev, e => { e.preventDefault(); imgDrop.classList.remove('over'); }));
+imgDrop.addEventListener('drop', e => addImages(e.dataTransfer.files));
+$('#thumbs').addEventListener('click', e => { const b = e.target.closest('[data-rmimg]'); if (!b) return; EXTRA.splice(+b.dataset.rmimg, 1); saveExtra(); renderThumbs(); });
+
+const htmlEsc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 async function buildRaw(e, to, prefix = '', corr = null) {
-  const pdf = await pdfBase64(e, S.mail.protect, corr), b = 'pl_' + Math.random().toString(36).slice(2);
+  const pdf = await pdfBase64(e, S.mail.protect, corr), rnd = () => Math.random().toString(36).slice(2);
+  const bMix = 'plm_' + rnd(), bRel = 'plr_' + rnd(), bAlt = 'pla_' + rnd();
   if (corr) prefix = prefix + (S.mail.corrPrefix || '');
   const bodyTxt = (corr && S.mail.corrNote ? fillTpl(S.mail.corrNote, e) + '\n\n' : '') + fillTpl(S.mail.body, e);
   const fromName = (S.mail.senderName || '').replace(/["\\]/g, '');
+  const imgs = (!corr || S.mail.imgOnCorr) ? EXTRA : [], inline = imgs.length && S.mail.imgMode !== 'attach';
   const hdr = [
     G.email ? `From: ${encWord(fromName)} <${G.email}>` : null,
     `To: ${to}`, `Subject: ${encWord(prefix + fillTpl(S.mail.subject, e).replace(/[\r\n]+/g, ' '))}`,
-    'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${b}"`
+    'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${bMix}"`
   ].filter(Boolean).join('\r\n');
+  const crlf = t => t.replace(/\r?\n/g, '\r\n');
+  const textPart = `Content-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64utf8(crlf(bodyTxt)))}`;
+  const imgName = (im, i) => `Anh_kem_${i + 1}${im.type === 'image/gif' ? '.gif' : '.jpg'}`;
+  let bodyPart;
+  if (inline) {
+    const cids = imgs.map((_, i) => `img${i + 1}.${rnd()}@phieuluong`);
+    const imgsHtml = cids.map(c => `<p style="margin:14px 0"><img src="cid:${c}" alt="" style="max-width:100%;height:auto;border-radius:6px;display:block"></p>`).join('');
+    const txtHtml = `<div>${htmlEsc(bodyTxt).replace(/\r?\n/g, '<br>')}</div>`;
+    const html = `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1f2937">${S.mail.imgPos === 'top' ? imgsHtml + txtHtml : txtHtml + imgsHtml}</body></html>`;
+    const htmlPart = `Content-Type: text/html; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64utf8(html))}`;
+    bodyPart = `Content-Type: multipart/related; boundary="${bRel}"\r\n\r\n--${bRel}\r\nContent-Type: multipart/alternative; boundary="${bAlt}"\r\n\r\n--${bAlt}\r\n${textPart}\r\n--${bAlt}\r\n${htmlPart}\r\n--${bAlt}--\r\n` +
+      imgs.map((im, i) => `--${bRel}\r\nContent-Type: ${im.type}; name="${imgName(im, i)}"\r\nContent-Transfer-Encoding: base64\r\nContent-ID: <${cids[i]}>\r\nContent-Disposition: inline; filename="${imgName(im, i)}"\r\n\r\n${wrap76(im.b64)}\r\n`).join('') + `--${bRel}--`;
+  } else bodyPart = textPart;
   const fn = fileName(e, corr);
-  const msg = `${hdr}\r\n\r\n--${b}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64utf8(bodyTxt.replace(/\r?\n/g, '\r\n')))}\r\n--${b}\r\nContent-Type: application/pdf; name="${fn}"\r\nContent-Disposition: attachment; filename="${fn}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(pdf)}\r\n--${b}--\r\n`;
+  const attachImgs = imgs.length && !inline ? imgs.map((im, i) => `--${bMix}\r\nContent-Type: ${im.type}; name="${imgName(im, i)}"\r\nContent-Disposition: attachment; filename="${imgName(im, i)}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(im.b64)}\r\n`).join('') : '';
+  const msg = `${hdr}\r\n\r\n--${bMix}\r\n${bodyPart}\r\n--${bMix}\r\nContent-Type: application/pdf; name="${fn}"\r\nContent-Disposition: attachment; filename="${fn}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(pdf)}\r\n${attachImgs}--${bMix}--\r\n`;
   return btoa(msg).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 class SendErr extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
@@ -1485,6 +1594,7 @@ function renderSend() {
   const mins = Math.ceil(q.length * (Math.max(1, +S.mail.delay || 3) + 1.5) / 60);
   $('#sendSummary').innerHTML = !ST.emps.length ? 'Chưa có dữ liệu.' :
     `Kỳ <b>${esc(S.org.period)}</b>: sẽ gửi <b>${q.length}</b> người` + (skip ? `, bỏ qua ${skip} người đã nhận` : '') + (nErr ? `, ${nErr} người có lỗi` : '') + (nOff ? `, ${nOff} người bỏ chọn` : '') + (q.length ? `. Ước tính ${mins} phút.` : '.') + (q.length > 480 ? '<br><span style="color:var(--warn)">Hơn 480 người: Gmail miễn phí có thể dừng giữa chừng, phần còn lại gửi vào hôm sau.</span>' : '');
+  if (EXTRA.length && ST.emps.length) $('#sendSummary').innerHTML += `<br>Kèm <b>${EXTRA.length} ảnh</b> ${S.mail.imgMode === 'attach' ? '(đính kèm file)' : '(hiện trong nội dung)'} mỗi email.`;
   $('#btnStart').disabled = RUN.on || !q.length;
   const nChg = ST.emps.filter(e => !e.errors.length && isChanged(e)).length, nSentSel = ST.emps.filter(e => isSendable(e) && isSent(e)).length, cl = corrList();
   $('#corrInfo').className = 'note ' + (nChg ? 'warn' : 'info');
