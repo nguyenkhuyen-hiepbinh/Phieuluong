@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Phiếu Lương NK</title>
+<title>HỆ THỐNG GỬI PHIẾU LƯƠNG</title>
 <meta name="color-scheme" content="light">
 <link rel="icon" type="image/png" href="assets/favicon-nk.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +39,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .brand .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(145deg,#2f6ff0,#1d4ed8);display:grid;place-items:center;flex:none;box-shadow:0 6px 14px rgba(37,99,235,.25)}
 .brand .logo svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .brand b{display:block;font-size:20px;letter-spacing:-.03em;color:var(--navy);line-height:1.2}
+.brand b.appname{font-weight:800;letter-spacing:-.01em;text-transform:uppercase}
 .brand small{display:block;font-size:13px;font-weight:700;color:#d7262e;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
 .brand .slogo{width:84px;height:63px;object-fit:contain;flex:none;border-radius:10px;background:#fff}
 .nav{display:flex;gap:4px}
@@ -298,6 +299,7 @@ table.list td b{color:#1d3554}
 }
 @media (max-width:420px){
   .brand small{font-size:10.5px;max-width:44vw;white-space:normal;line-height:1.3}
+  .brand b.appname{font-size:15px}
   .gbtn{padding:7px 10px}
   .gbtn b{font-size:12.5px}
   .mapitem,.maphead{grid-template-columns:minmax(0,1fr) 36px}
@@ -380,7 +382,7 @@ body:not([data-step="1"]) .extras{display:none}
   <div class="wrap">
     <div class="brand">
       <img class="slogo" src="assets/logo-nk.jpg" alt="Logo Trường THCS - THPT Nguyễn Khuyến" width="72" height="54">
-      <div><b>Phiếu Lương NK</b><small id="orgSmall">Gửi phiếu lương PDF qua Gmail</small></div>
+      <div><b class="appname">HỆ THỐNG GỬI PHIẾU LƯƠNG</b><small id="orgSmall">Gửi phiếu lương PDF qua Gmail</small></div>
     </div>
     <nav class="nav" aria-label="Điều hướng phụ">
       <button class="navlink" data-go="5"><svg class="i"><use href="#i-clock"/></svg>Lịch sử</button>
@@ -809,7 +811,7 @@ body:not([data-step="1"]) .extras{display:none}
           </svg>
         </div>
         <div class="hero-text">
-          <h2>Phiếu Lương NK</h2>
+          <h2 style="font-weight:800;letter-spacing:-.01em">HỆ THỐNG GỬI PHIẾU LƯƠNG</h2>
           <p class="hero-sub">Giải pháp gửi phiếu lương tự động, nhanh chóng và an toàn</p>
           <p class="hero-txt">Giúp nhà trường tiết kiệm thời gian, giảm sai sót và bảo mật thông tin lương của cán bộ, giáo viên, nhân viên. Tất cả trong một quy trình đơn giản, trực quan và dễ sử dụng.</p>
           <ul class="ticks"><li>Tạo phiếu lương PDF từ file Excel</li><li>Gửi email hàng loạt qua Gmail</li><li>Xem trước và kiểm tra từng phiếu</li></ul>
