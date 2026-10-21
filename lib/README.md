@@ -10,3 +10,4 @@ Các file này được đưa thẳng vào kho để trang không phụ thuộc 
 | jszip.min.js | JSZip | 3.10.1 | MIT |
 
 Không sửa nội dung các file này. Muốn nâng cấp thì thay cả file bằng bản mới.
+| vfs_serif.js | Font Liberation Serif (chữ có chân, đã cắt gọn còn Latin + tiếng Việt) dùng cho phiếu PDF | 2.x | SIL OFL 1.1 |

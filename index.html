@@ -12,6 +12,7 @@
 <script src="lib/xlsx.full.min.js"></script>
 <script src="lib/pdfmake.min.js"></script>
 <script src="lib/vfs_fonts.js"></script>
+<script src="lib/vfs_serif.js"></script>
 <script src="lib/jszip.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -428,16 +429,18 @@ body:not([data-step="1"]) .extras{display:none}
               <div class="frow"><label for="fTitle">Tiêu đề phiếu</label><input type="text" id="fTitle" data-k="org.title"></div>
               <div class="frow"><label for="selMonth">Kỳ lương <span class="req">*</span></label>
                 <div class="period"><select id="selMonth" aria-label="Tháng"></select><select id="selYear" aria-label="Năm"></select></div></div>
-              <div class="frow"><label for="fNote">Ghi chú dưới tiêu đề</label><input type="text" id="fNote" data-k="org.note" placeholder="Ví dụ: ( Bảng nháp )"></div>
+              <div class="frow"><label for="fNote">Chữ cạnh tiêu đề</label><input type="text" id="fNote" data-k="org.note" placeholder="Để trống = không in">
+                <div class="chips" style="grid-column:2;margin:4px 0 0" id="noteChips"><button type="button" class="chip" data-note="( Bảng nháp )">( Bảng nháp )</button><button type="button" class="chip" data-note="( Chính thức )">( Chính thức )</button><button type="button" class="chip" data-note="">Xóa chữ</button></div></div>
               <div class="frow"><label for="fNet">Nhãn dòng cuối</label><input type="text" id="fNet" data-k="org.netLabel"></div>
-              <div class="frow" style="margin-bottom:0"><label for="fFoot">Ghi chú cuối phiếu</label><input type="text" id="fFoot" data-k="org.footer"></div>
+              <div class="frow" style="margin-bottom:0;align-items:start"><label for="fFoot" style="padding-top:9px">Lời nhắn cuối phiếu</label><textarea id="fFoot" data-k="org.footer" style="min-height:118px"></textarea>
+                <em>In trong khung vàng cuối phiếu. Viết <code>**chữ**</code> để in đậm. Để trống thì không in khung.</em></div>
             </div>
             <div class="box">
               <div class="bhead"><div class="bicon orange"><svg class="i"><use href="#i-image"/></svg></div><div><h3>Logo đơn vị</h3><p class="sub">In ở góc trái phiếu lương (không bắt buộc).</p></div></div>
               <div class="upload">
                 <div class="logo-prev" id="logoPrev"></div>
-                <div><b>Tải logo</b><small>PNG, JPG — tự thu nhỏ</small>
-                  <div class="row"><label class="btn small soft">Chọn tệp<input type="file" id="logoFile" accept="image/png,image/jpeg" hidden></label><button class="btn small ghost" id="logoClear">Bỏ logo</button></div></div>
+                <div><b>Logo trên phiếu</b><small id="logoState">PNG, JPG — tự thu nhỏ</small>
+                  <div class="row"><label class="btn small soft">Chọn tệp<input type="file" id="logoFile" accept="image/png,image/jpeg" hidden></label><button class="btn small" id="logoDefault">Logo trường</button><button class="btn small ghost" id="logoClear">Bỏ logo</button></div></div>
               </div>
               <button class="btn" id="btnSample" style="width:100%;margin-bottom:14px"><svg class="i"><use href="#i-eye"/></svg>Xem phiếu mẫu</button>
               <div class="note ok flex" style="margin:0"><svg class="i"><use href="#i-shield"/></svg><div><b>Thiết lập lưu ngay trên trình duyệt này.</b><br>Không gửi lên máy chủ nào. Nên tải file sao lưu ở tab <a href="#" data-tabgo="backup">Sao lưu &amp; khôi phục</a>.</div></div>
@@ -556,10 +559,11 @@ body:not([data-step="1"]) .extras{display:none}
             <button class="btn small" data-add="ded" style="margin-top:10px">+ Thêm dòng</button>
           </div>
           <div class="card">
-            <h3>Tổng cộng</h3><p class="sub">Nếu chọn cột Excel, chương trình đối chiếu với tổng tự tính và cảnh báo khi lệch.</p>
+            <h3>Tổng cộng &amp; ghi chú</h3><p class="sub">Nếu chọn cột tổng, chương trình đối chiếu với tổng tự tính và cảnh báo khi lệch. Cột ghi chú in dòng "Ghi chú:" dưới số Còn lại.</p>
             <div class="kv"><label>Tổng thu nhập</label><select data-m="incTotal"></select></div>
             <div class="kv"><label>Tổng khấu trừ</label><select data-m="dedTotal"></select></div>
             <div class="kv"><label>Còn lại</label><select data-m="net"></select></div>
+            <div class="kv"><label>Ghi chú từng người</label><select data-m="noteCol"></select></div>
           </div>
         </div>
         <div class="footer-actions"><button class="btn" data-go="1"><svg class="i"><use href="#i-back"/></svg>Thiết lập</button><button class="btn primary big" data-go="3">Tiếp tục: Kiểm tra<svg class="i"><use href="#i-arrow"/></svg></button></div>
@@ -818,8 +822,8 @@ const LS_SET = 'pl_settings_v1', LS_LOG = 'pl_log_v1';
 const d0 = new Date();
 const DEF = {
   org: { name: 'TRƯỜNG THCS VÀ THPT NGUYỄN KHUYẾN', sub: 'P. KẾ TOÁN - ĐT: 028 38 426026', logo: '',
-         title: 'PHIẾU TÍNH LƯƠNG', period: `THÁNG ${pad2(d0.getMonth() + 1)}/${d0.getFullYear()}`, note: '',
-         netLabel: 'Còn lại', footer: 'Mọi thắc mắc về phiếu lương, vui lòng liên hệ Phòng Kế toán.' },
+         title: 'PHIẾU TÍNH LƯƠNG', period: `THÁNG ${pad2(d0.getMonth() + 1)}/${d0.getFullYear()}`, note: '( Bảng nháp )',
+         netLabel: 'Còn lại', footer: 'Kính nhờ Quý Thầy Cô, Anh Chị vui lòng kiểm tra lại số tiết giảng dạy và bảng chấm công ngoài giờ. Xin lỗi nếu có sai sót xin vui lòng báo giúp em.\n( Dạ xin nhờ Quý Thầy Cô Anh Chị gửi tin nhắn qua ĐT hoặc Zalo vì lỡ em không tiện nghe ĐT )\nXin cảm ơn\n**ĐT: 0979716449**' },
   mail: { senderName: 'Phòng Kế toán', subject: 'Phiếu tính lương {ky_luong} - {ho_ten}',
           body: 'Kính gửi Thầy/Cô {ho_ten},\n\nPhòng Kế toán {don_vi} gửi Thầy/Cô phiếu tính lương {ky_luong} trong file PDF đính kèm.\nMật khẩu mở file: {goi_y_mat_khau}.\n\nNếu có thắc mắc, Thầy/Cô vui lòng phản hồi email này.\n\nTrân trọng,\n{nguoi_gui}',
           protect: true, hint: '6 số cuối số CCCD của Thầy/Cô', delay: 3,
@@ -862,6 +866,14 @@ const LAYOUT = {
 };
 function merge(a, b) { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') merge(a[k], b[k]); else if (b[k] !== undefined) a[k] = b[k]; } return a; }
 let S = merge(JSON.parse(JSON.stringify(DEF)), lsGet(LS_SET, {}));
+if ((S._v || 1) < 2) {
+  if (!S.org.note) S.org.note = DEF.org.note;
+  if (!S.org.footer || S.org.footer === 'Mọi thắc mắc về phiếu lương, vui lòng liên hệ Phòng Kế toán.') S.org.footer = DEF.org.footer;
+  S._v = 2; lsSet(LS_SET, S);
+}
+let DEFAULT_LOGO = '';
+fetch('assets/logo-nk.jpg').then(r => r.ok ? r.blob() : null).then(b => { if (!b) return; const rd = new FileReader(); rd.onload = () => { DEFAULT_LOGO = rd.result; renderLogo(); }; rd.readAsDataURL(b); }).catch(() => {});
+const logoData = () => S.org.logo === 'none' ? '' : (S.org.logo || DEFAULT_LOGO);
 let saveT;
 function saveSettings() { clearTimeout(saveT); saveT = setTimeout(() => { if (!lsSet(LS_SET, S)) toast('Không lưu được thiết lập (bộ nhớ trình duyệt bị chặn hoặc đầy).'); }, 300); }
 const getK = k => k.split('.').reduce((o, p) => o?.[p], S);
@@ -939,7 +951,11 @@ $('#vars').addEventListener('click', e => {
   ta.value = ta.value.slice(0, a) + c.textContent + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + c.textContent.length;
   ta.dispatchEvent(new Event('input'));
 });
-function renderLogo() { $('#logoPrev').innerHTML = S.org.logo ? `<img src="${S.org.logo}" alt="Logo">` : '<svg class="i"><use href="#i-image"/></svg>'; }
+function renderLogo() {
+  const src = logoData();
+  $('#logoPrev').innerHTML = src ? `<img src="${src}" alt="Logo">` : '<svg class="i"><use href="#i-image"/></svg>';
+  const st = $('#logoState'); if (st) st.textContent = S.org.logo === 'none' ? 'Không in logo' : S.org.logo ? 'Logo bạn tải lên' : 'Logo trường (mặc định)';
+}
 $('#logoFile').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
@@ -951,7 +967,9 @@ $('#logoFile').addEventListener('change', e => {
   }; img.src = rd.result; };
   rd.readAsDataURL(f); e.target.value = '';
 });
-$('#logoClear').onclick = () => { S.org.logo = ''; saveSettings(); renderLogo(); };
+$('#logoClear').onclick = () => { S.org.logo = 'none'; saveSettings(); renderLogo(); };
+$('#logoDefault').onclick = () => { S.org.logo = ''; saveSettings(); renderLogo(); toast('Dùng logo trường trên phiếu.'); };
+$('#noteChips').addEventListener('click', e => { const c = e.target.closest('[data-note]'); if (!c) return; const el = $('#fNote'); el.value = c.dataset.note; el.dispatchEvent(new Event('input')); toast(c.dataset.note ? 'Chữ cạnh tiêu đề: ' + c.dataset.note : 'Đã xóa chữ cạnh tiêu đề.'); });
 $('#originText').textContent = location.origin && location.origin !== 'null' ? location.origin : '(mở trang bằng GitHub Pages để có địa chỉ)';
 $('#btnCopyOrigin').onclick = () => { navigator.clipboard?.writeText($('#originText').textContent).then(() => toast('Đã sao chép.'), () => toast('Không sao chép được, hãy bôi đen và chép tay.')); };
 $('#btnExportCfg').onclick = () => { const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }); dl(blob, 'thiet_lap_phieu_luong.json'); };
@@ -1048,6 +1066,7 @@ function initMap() {
   M.stt = resolve(saved?.stt, LAYOUT.stt, null);
   M.pass = resolve(saved?.pass, LAYOUT.pass, null);
   M.passLast = saved?.passLast ?? 6;
+  M.noteCol = resolve(saved?.noteCol, ['ghi chú', 'ghi chu', 'diễn giải', 'chi tiết'], null);
   const totalsUsed = new Set();
   M.incTotal = resolve(saved?.incTotal, LAYOUT.incTotal, totalsUsed);
   M.dedTotal = resolve(saved?.dedTotal, LAYOUT.dedTotal, totalsUsed);
@@ -1153,6 +1172,7 @@ function rebuild() {
     let pw = M.pass ? idText(M.pass, pc.raw, pc.txt).replace(/\s+/g, '') : '';
     if (M.passLast > 0 && pw.length > M.passLast) pw = pw.slice(-M.passLast);
     e.pass = pw;
+    e.note = M.noteCol ? cell(rec, M.noteCol).txt : '';
     e.info = M.info.filter(it => it.label.trim()).map(it => [it.label.trim(), it.col ? infoVal(it.label, rec, it.col) : '']);
     const money = (list) => M[list].filter(it => it.label.trim()).map(it => {
       if (!it.col) return [it.label.trim(), null];
@@ -1187,7 +1207,7 @@ function rebuild() {
 }
 const isSendable = e => e.errors.length === 0 && ST.include['r' + e.excelRow];
 function fnv(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); }
-const fpOf = e => fnv(JSON.stringify([e.name, e.info, e.inc, e.ded, e.incTotal, e.dedTotal, e.net]));
+const fpOf = e => fnv(JSON.stringify([e.name, e.info, e.inc, e.ded, e.incTotal, e.dedTotal, e.net, ...(e.note ? [e.note] : [])]));
 const isSent = e => LOG[logKey(e)]?.status === 'sent';
 const isChanged = e => { const l = LOG[logKey(e)]; return l?.status === 'sent' && !!l.fp && l.fp !== e.fp; };
 const sendCount = l => l ? (l.count || (l.status === 'sent' ? 1 : 0)) : 0;
@@ -1242,45 +1262,75 @@ $('#tbody').addEventListener('click', e => {
 
 /* ========== PDF ========== */
 function fileName(e, corr) { return `PhieuLuong_${e.stt ? pad2(e.stt) + '_' : ''}${slug(e.name)}_${slug(S.org.period)}${corr ? '_dieu_chinh' : ''}.pdf`; }
+const NAVY = '#1c3563', BLUE = '#1f5fae', LINE = '#9fbde3';
+function richLine(t) {
+  const out = []; t.split(/(\*\*[^*]+\*\*)/).forEach(p => { if (!p) return; const b = /^\*\*[^*]+\*\*$/.test(p); out.push({ text: b ? p.slice(2, -2) : p, bold: b }); });
+  return out.length ? out : [{ text: ' ' }];
+}
+function infoLines(info) {
+  const items = info.map(([l, v]) => [l, v || '']).filter(([, v]) => v !== '');
+  const iTk = items.findIndex(([l]) => /so tk|tai khoan|stk/.test(norm(l))), iBank = items.findIndex(([l]) => /^(ngan hang|nh)$/.test(norm(l)));
+  if (iTk >= 0 && iBank >= 0) { items[iTk] = [items[iTk][0], items[iTk][1] + ' ' + items[iBank][1]]; items.splice(iBank, 1); }
+  const len = ([l, v]) => l.length + v.length + 4, lines = [];
+  if (items.length) lines.push(items.splice(0, Math.min(2, items.length)));
+  let cur = [], n = 0;
+  for (const it of items) { const L = len(it) + (cur.length ? 5 : 0); if (cur.length && n + L > 78) { lines.push(cur); cur = []; n = 0; } cur.push(it); n += len(it) + (cur.length > 1 ? 5 : 0); }
+  if (cur.length) lines.push(cur);
+  return lines.map(line => ({ text: line.flatMap(([l, v], i) => [...(i ? [{ text: '   -   ', color: '#7a8aa3' }] : []), { text: l + '  :  ', color: '#33445e' }, { text: v, color: '#111c2e' }]), margin: [0, 1.5, 0, 1.5] }));
+}
+function pageDeco(cur, s) {
+  const W = s.width, H = s.height;
+  return { svg: `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <path d="M${W * .52} 9 C ${W * .64} 70, ${W * .78} 46, ${W - 9} 120 L ${W - 9} 9 Z" fill="#e6effb"/>
+    <path d="M${W * .6} 9 C ${W * .7} 52, ${W * .83} 30, ${W - 9} 82 L ${W - 9} 9 Z" fill="#d7e6f8" fill-opacity="0.85"/>
+    <path d="M${W * .7} 9 C ${W * .78} 36, ${W * .88} 18, ${W - 9} 48 L ${W - 9} 9 Z" fill="#c6dbf4" fill-opacity="0.7"/>
+    <path d="M${W * .55} 9 C ${W * .66} 78, ${W * .8} 52, ${W - 9} 132" fill="none" stroke="#ffffff" stroke-width="2.2"/>
+    <rect x="9" y="9" width="${W - 18}" height="${H - 18}" rx="16" fill="none" stroke="#7aa7dc" stroke-width="1.6"/></svg>` };
+}
 function buildDoc(e, protect, corr) {
-  const o = S.org, cellAmt = v => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right' });
-  const head = [];
-  if (o.logo) head.push({ image: o.logo, fit: [78, 78], width: 82 });
-  head.push({ width: '*', stack: [
-    { text: (o.name || '').toUpperCase(), bold: true, fontSize: 12.5, alignment: o.logo ? 'left' : 'center', margin: [0, 8, 0, 0] },
-    e.stt ? { text: `STT:   ${e.stt}`, alignment: 'right', margin: [0, 8, 0, 0] } : { text: '' }
-  ] });
-  const info = [];
-  for (let i = 0; i < e.info.length; i += 2) {
-    const a = e.info[i], b = e.info[i + 1];
-    info.push([{ text: a[0] + ':', color: '#4a4a4a' }, { text: a[1] || '', bold: true },
-               b ? { text: b[0] + ':', color: '#4a4a4a' } : '', b ? { text: b[1] || '', bold: true } : '']);
-  }
-  const n = Math.max(e.inc.length, e.ded.length), body = [[
-    { text: 'THU NHẬP', colSpan: 2, bold: true, alignment: 'center', fillColor: '#e9eff6' }, {},
-    { text: 'KHẤU TRỪ', colSpan: 2, bold: true, alignment: 'center', fillColor: '#e9eff6' }, {}]];
-  for (let i = 0; i < n; i++) {
-    const a = e.inc[i], b = e.ded[i];
-    body.push([a ? a[0] : '', a ? cellAmt(a[1]) : '', b ? b[0] : '', b ? cellAmt(b[1]) : '']);
-  }
-  body.push([{ text: 'Tổng cộng', bold: true }, { ...cellAmt(e.incTotal), bold: true }, { text: 'Tổng cộng', bold: true }, { ...cellAmt(e.dedTotal), bold: true }]);
-  const lines = { hLineWidth: () => 0.8, vLineWidth: () => 0.8, hLineColor: () => '#7d8794', vLineColor: () => '#7d8794', paddingTop: () => 6, paddingBottom: () => 6, paddingLeft: () => 6, paddingRight: () => 6 };
+  const o = S.org, W = 842 - 2 * 36, logo = logoData();
+  const amt = (v, bold) => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right', bold: !!bold });
+  const titleTxt = `${o.title || ''} ${o.period || ''}`.trim() + (o.note ? '  ' + o.note.trim() : '');
+  const tW = Math.min(W - 120, Math.max(380, titleTxt.length * 11.2 + 60));
+  const header = { columns: [
+    logo ? { image: logo, fit: [104, 70], width: 108 } : { text: '', width: 0 },
+    { width: '*', stack: [
+      { text: (o.name || '').toUpperCase(), bold: true, font: 'Roboto', fontSize: 19, color: NAVY, margin: [0, 6, 0, 3] },
+      o.sub ? { text: o.sub, fontSize: 13, color: NAVY } : { text: '' } ] },
+    e.stt ? { width: 130, stack: [ { text: [{ text: 'STT:   ' }, { text: String(e.stt), bold: true }], fontSize: 13, color: NAVY, margin: [8, 10, 0, 3] },
+      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1, lineColor: '#8fb0d8' }] } ] } : { text: '', width: 0 }
+  ], columnGap: 12 };
+  const title = { stack: [
+    { svg: `<svg width="${tW}" height="34"><rect x="0" y="0" width="${tW}" height="34" rx="8" fill="#dbe9fb"/></svg>`, alignment: 'center' },
+    { text: titleTxt, alignment: 'center', bold: true, fontSize: 18, color: '#14284b', margin: [0, -28.5, 0, 0] } ], margin: [0, 4, 0, 0] };
+  const lines = infoLines(e.info);
+  const n = Math.max(e.inc.length, e.ded.length);
+  const body = [[ { text: 'THU NHẬP', colSpan: 2, bold: true, alignment: 'center', fontSize: 13, color: NAVY, fillColor: '#dcebfb', margin: [0, 3, 0, 3] }, {},
+                  { text: 'KHẤU TRỪ', colSpan: 2, bold: true, alignment: 'center', fontSize: 13, color: NAVY, fillColor: '#dcebfb', margin: [0, 3, 0, 3] }, {} ]];
+  for (let i = 0; i < n; i++) { const a = e.inc[i], b = e.ded[i]; body.push([ { text: a ? a[0] : '', margin: [14, 0, 0, 0] }, a ? amt(a[1]) : '', { text: b ? b[0] : '', margin: [14, 0, 0, 0] }, b ? amt(b[1]) : '' ]); }
+  body.push([ { text: 'Tổng cộng', bold: true, fontSize: 13, margin: [14, 0, 0, 0] }, { ...amt(e.incTotal, true), fontSize: 13 }, { text: 'Tổng cộng', bold: true, fontSize: 13, margin: [14, 0, 0, 0] }, { ...amt(e.dedTotal, true), fontSize: 13 } ].map(c => ({ ...c, fillColor: '#dcebfb' })));
+  const nBody = body.length;
+  const table = { table: { headerRows: 1, widths: ['*', 120, '*', 105], body }, margin: [0, 8, 0, 0],
+    layout: { hLineWidth: (i) => (i === 0 || i === nBody) ? 1.2 : 0.7, vLineWidth: (i) => i === 2 ? 1.6 : (i === 0 || i === 4) ? 1.2 : 0.7,
+      hLineColor: (i) => (i === 0 || i === nBody) ? '#7aa7dc' : LINE, vLineColor: (i) => i === 2 ? NAVY : (i === 0 || i === 4) ? '#7aa7dc' : LINE,
+      paddingTop: () => 4.5, paddingBottom: () => 4.5, paddingLeft: () => 6, paddingRight: () => 12 } };
+  const footLines = String(o.footer || '').split(/\r?\n/).filter((l, i, arr) => l.trim() || (i > 0 && i < arr.length - 1));
   const content = [
-    { columns: head, columnGap: 10 },
-    o.sub ? { text: o.sub, alignment: 'right', fontSize: 10, margin: [0, 6, 0, 0] } : null,
-    { text: `${o.title || ''} ${o.period || ''}`.trim(), fontSize: 17, bold: true, alignment: 'center', margin: [0, 18, 0, 0] },
-    o.note ? { text: o.note, alignment: 'center', fontSize: 12, margin: [0, 2, 0, 0] } : null,
-    corr ? { text: 'BẢN ĐIỀU CHỈNH' + (corr.prev ? ` — thay thế bản đã gửi lúc ${corr.prev}` : ''), alignment: 'center', fontSize: 11, bold: true, color: '#c62828', margin: [0, 4, 0, 0] } : null,
-    info.length ? { table: { widths: ['auto', '*', 'auto', '*'], body: info }, layout: { ...lines, hLineWidth: () => 0, vLineWidth: () => 0, paddingTop: () => 3, paddingBottom: () => 3, paddingLeft: () => 0, paddingRight: () => 8 }, margin: [0, 16, 0, 0] } : null,
-    { table: { headerRows: 1, widths: ['*', 92, '*', 92], body }, layout: lines, margin: [0, 14, 0, 0] },
-    { table: { widths: ['auto'], body: [[{ text: [{ text: `${o.netLabel || 'Còn lại'}:   ` }, { text: fmtMoney(e.net), bold: true }], fontSize: 13.5, fillColor: '#fff176', margin: [4, 2, 8, 2] }]] }, layout: 'noBorders', margin: [0, 14, 0, 0] },
-    o.footer ? { text: o.footer, fontSize: 9, color: '#666', margin: [0, 18, 0, 0] } : null,
-    { text: `Ngày lập: ${today()}`, fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+    header,
+    title,
+    corr ? { text: 'BẢN ĐIỀU CHỈNH' + (corr.prev ? ` — thay thế bản đã gửi lúc ${corr.prev}` : ''), alignment: 'center', fontSize: 11.5, bold: true, color: '#c62828', margin: [0, 5, 0, 0] } : null,
+    lines.length ? { table: { widths: ['*'], body: [[{ stack: lines, fillColor: '#eef4fb', margin: [12, 4, 8, 4] }]] }, layout: 'noBorders', margin: [0, 10, 0, 0] } : null,
+    table,
+    { text: [{ text: `${o.netLabel || 'Còn lại'}  :   `, bold: true, fontSize: 14, color: NAVY }, { text: fmtMoney(e.net), bold: true, fontSize: 18, color: BLUE }], margin: [10, 9, 0, 0] },
+    e.note ? { text: [{ text: 'Ghi chú:   ', color: '#33445e' }, { text: e.note }], margin: [10, 4, 0, 0] } : null,
+    footLines.length ? { table: { widths: [30, '*'], body: [[
+        { svg: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z M14.5 6.5l3 3" fill="none" stroke="#1c3563" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>', margin: [6, 4, 0, 0] },
+        { stack: footLines.map(l => ({ text: richLine(l), margin: [0, 1, 0, 1] })), fontSize: 11.5, margin: [2, 2, 6, 2] } ]] },
+      layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => '#fbf0c2', paddingTop: () => 5, paddingBottom: () => 5, paddingLeft: () => 6, paddingRight: () => 8 }, margin: [0, 8, 0, 0] } : null
   ].filter(Boolean);
-  const doc = { pageSize: 'A4', pageMargins: [42, 34, 42, 40], content,
-    defaultStyle: { font: 'Roboto', fontSize: 10.5, lineHeight: 1.15, color: '#111' },
-    info: { title: `Phiếu lương ${o.period} - ${e.name}`, author: o.name },
-    footer: () => ({ text: 'Tài liệu mật — chỉ dành cho người nhận', alignment: 'center', fontSize: 7.5, color: '#999', margin: [0, 14, 0, 0] }) };
+  const doc = { pageSize: 'A4', pageOrientation: 'landscape', pageMargins: [36, 26, 36, 26], content, background: pageDeco,
+    defaultStyle: { font: window.PL_SERIF_OK ? 'Serif' : 'Roboto', fontSize: 12.5, lineHeight: 1.12, color: '#111c2e' },
+    info: { title: `Phiếu lương ${o.period} - ${e.name}`, author: o.name } };
   if (protect) {
     const rnd = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
     Object.assign(doc, { version: '1.7ext3', userPassword: e.pass, ownerPassword: rnd, permissions: { printing: 'highResolution', modifying: false, copying: false, annotating: false } });
@@ -1302,8 +1352,8 @@ async function preview(e) {
 }
 $('#mClose').onclick = () => { $('#modal').classList.remove('show'); $('#mFrame').src = 'about:blank'; };
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#mClose').click(); });
-const SAMPLE = { idx: -1, excelRow: 0, stt: '22', name: 'Nguyễn Văn A', email: 'a@example.com', pass: '123456', errors: [], warns: [],
-  info: [['Họ và tên', 'Nguyễn Văn A'], ['Công tác', 'Học vụ'], ['Lương CB', '10.620.000'], ['Mã số thuế', '001234567890'], ['CCCD', '001234567890'], ['Số TK', '0123456789 MSB'], ['Mail', 'a@example.com']],
+const SAMPLE = { idx: -1, excelRow: 0, stt: '22', name: 'Nguyễn Văn A', email: 'a@example.com', pass: '123456', errors: [], warns: [], note: '480000 x 1;380000 x 3;100000 x 5;420000 x 1;',
+  info: [['Họ và tên', 'Nguyễn Văn A'], ['Công tác', 'Học vụ'], ['Lương CB', '10.620.000'], ['Mã số thuế', '001234567890'], ['CCCD', '001234567890'], ['Số TK', '0123456789'], ['Ngân hàng', 'MSB'], ['Mail', 'a@example.com']],
   inc: [['Lương', 15000000], ['Phụ cấp trách nhiệm - Thâm niên', 200000], ['Phụ cấp ngoài giờ', 2540000], ['Phụ cấp giảng dạy', null], ['Phụ cấp khác', 6200000]],
   ded: [['Đã nhận đợt 1', null], ['BHXH-YT-CĐ-BHTN', 1168200], ['Thuế TNCN', 0], ['Hoàn trả tạm ứng', null]],
   incTotal: 23940000, dedTotal: 1168200, net: 22771800 };
