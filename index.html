@@ -642,7 +642,7 @@ body:not([data-step="1"]) .extras{display:none}
           </div>
           <div>
             <label class="field"><span>Lời nhắn ở đầu email</span><textarea data-k="mail.corrNote" style="min-height:96px"></textarea>
-              <em>Phiếu PDF cũng ghi rõ dòng chữ đỏ "BẢN ĐIỀU CHỈNH" dưới tiêu đề.</em></label>
+              <em>Phiếu PDF giữ nguyên mẫu, chỉ thay số liệu mới. Tên file có đuôi "_dieu_chinh".</em></label>
             <button class="btn primary" id="btnCorr"><svg class="i"><use href="#i-send"/></svg>Gửi bản điều chỉnh</button>
           </div>
         </div>
@@ -1289,47 +1289,53 @@ function pageDeco(cur, s) {
 }
 function buildDoc(e, protect, corr) {
   const o = S.org, W = 842 - 2 * 36, logo = logoData();
-  const amt = (v, bold) => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right', bold: !!bold });
   const titleTxt = `${o.title || ''} ${o.period || ''}`.trim() + (o.note ? '  ' + o.note.trim() : '');
-  const tW = Math.min(W - 120, Math.max(380, titleTxt.length * 11.2 + 60));
-  const header = { columns: [
-    logo ? { image: logo, fit: [104, 70], width: 108 } : { text: '', width: 0 },
-    { width: '*', stack: [
-      { text: (o.name || '').toUpperCase(), bold: true, font: 'Roboto', fontSize: 19, color: NAVY, margin: [0, 6, 0, 3] },
-      o.sub ? { text: o.sub, fontSize: 13, color: NAVY } : { text: '' } ] },
-    e.stt ? { width: 130, stack: [ { text: [{ text: 'STT:   ' }, { text: String(e.stt), bold: true }], fontSize: 13, color: NAVY, margin: [8, 10, 0, 3] },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1, lineColor: '#8fb0d8' }] } ] } : { text: '', width: 0 }
-  ], columnGap: 12 };
-  const title = { stack: [
-    { svg: `<svg width="${tW}" height="34"><rect x="0" y="0" width="${tW}" height="34" rx="8" fill="#dbe9fb"/></svg>`, alignment: 'center' },
-    { text: titleTxt, alignment: 'center', bold: true, fontSize: 18, color: '#14284b', margin: [0, -28.5, 0, 0] } ], margin: [0, 4, 0, 0] };
   const lines = infoLines(e.info);
   const n = Math.max(e.inc.length, e.ded.length);
-  const body = [[ { text: 'THU NHẬP', colSpan: 2, bold: true, alignment: 'center', fontSize: 13, color: NAVY, fillColor: '#dcebfb', margin: [0, 3, 0, 3] }, {},
-                  { text: 'KHẤU TRỪ', colSpan: 2, bold: true, alignment: 'center', fontSize: 13, color: NAVY, fillColor: '#dcebfb', margin: [0, 3, 0, 3] }, {} ]];
+  const footLines = String(o.footer || '').split(/\r?\n/).filter((l, i, arr) => l.trim() || (i > 0 && i < arr.length - 1));
+  // Ước lượng chiều cao để phiếu luôn nằm gọn trên 1 trang A4 ngang
+  const wrap = (t, cpl) => Math.max(1, Math.ceil(String(t).length / cpl));
+  const est = 76 + 46 + (lines.length ? lines.length * 16.5 + 12 : 0) + (n + 2) * 23.5 + 30
+    + (e.note ? wrap('Ghi chú:   ' + e.note, 118) * 15.5 + 4 : 0)
+    + (footLines.length ? footLines.reduce((a, l) => a + wrap(l, 124), 0) * 15 + 20 : 0);
+  const avail = 595 - 2 * 24 - 6, k = Math.max(0.68, Math.min(1, avail / est)), z = v => Math.round(v * k * 10) / 10;
+  const amt = (v, bold) => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right', bold: !!bold });
+  const tW = Math.min(W - 120, Math.max(380, titleTxt.length * z(11.2) + 60));
+  const header = { columns: [
+    logo ? { image: logo, fit: [z(100), z(66)], width: z(104) } : { text: '', width: 0 },
+    { width: '*', stack: [
+      { text: (o.name || '').toUpperCase(), bold: true, font: 'Roboto', fontSize: z(19), color: NAVY, margin: [0, z(6), 0, 3] },
+      o.sub ? { text: o.sub, fontSize: z(13), color: NAVY } : { text: '' } ] },
+    e.stt ? { width: 130, stack: [ { text: [{ text: 'STT:   ' }, { text: String(e.stt), bold: true }], fontSize: z(13), color: NAVY, margin: [8, z(10), 0, 3] },
+      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 1, lineColor: '#8fb0d8' }] } ] } : { text: '', width: 0 }
+  ], columnGap: 12 };
+  const tH = z(34);
+  const title = { stack: [
+    { svg: `<svg width="${tW}" height="${tH}"><rect x="0" y="0" width="${tW}" height="${tH}" rx="8" fill="#dbe9fb"/></svg>`, alignment: 'center' },
+    { text: titleTxt, alignment: 'center', bold: true, fontSize: z(18), color: '#14284b', margin: [0, -(tH * 0.84), 0, 0] } ], margin: [0, z(4), 0, 0] };
+  const body = [[ { text: 'THU NHẬP', colSpan: 2, bold: true, alignment: 'center', fontSize: z(13), color: NAVY, fillColor: '#dcebfb', margin: [0, z(3), 0, z(3)] }, {},
+                  { text: 'KHẤU TRỪ', colSpan: 2, bold: true, alignment: 'center', fontSize: z(13), color: NAVY, fillColor: '#dcebfb', margin: [0, z(3), 0, z(3)] }, {} ]];
   for (let i = 0; i < n; i++) { const a = e.inc[i], b = e.ded[i]; body.push([ { text: a ? a[0] : '', margin: [14, 0, 0, 0] }, a ? amt(a[1]) : '', { text: b ? b[0] : '', margin: [14, 0, 0, 0] }, b ? amt(b[1]) : '' ]); }
-  body.push([ { text: 'Tổng cộng', bold: true, fontSize: 13, margin: [14, 0, 0, 0] }, { ...amt(e.incTotal, true), fontSize: 13 }, { text: 'Tổng cộng', bold: true, fontSize: 13, margin: [14, 0, 0, 0] }, { ...amt(e.dedTotal, true), fontSize: 13 } ].map(c => ({ ...c, fillColor: '#dcebfb' })));
+  body.push([ { text: 'Tổng cộng', bold: true, fontSize: z(13), margin: [14, 0, 0, 0] }, { ...amt(e.incTotal, true), fontSize: z(13) }, { text: 'Tổng cộng', bold: true, fontSize: z(13), margin: [14, 0, 0, 0] }, { ...amt(e.dedTotal, true), fontSize: z(13) } ].map(c => ({ ...c, fillColor: '#dcebfb' })));
   const nBody = body.length;
-  const table = { table: { headerRows: 1, widths: ['*', 120, '*', 105], body }, margin: [0, 8, 0, 0],
+  const table = { table: { headerRows: 1, dontBreakRows: true, widths: ['*', 120, '*', 105], body }, margin: [0, z(8), 0, 0],
     layout: { hLineWidth: (i) => (i === 0 || i === nBody) ? 1.2 : 0.7, vLineWidth: (i) => i === 2 ? 1.6 : (i === 0 || i === 4) ? 1.2 : 0.7,
       hLineColor: (i) => (i === 0 || i === nBody) ? '#7aa7dc' : LINE, vLineColor: (i) => i === 2 ? NAVY : (i === 0 || i === 4) ? '#7aa7dc' : LINE,
-      paddingTop: () => 4.5, paddingBottom: () => 4.5, paddingLeft: () => 6, paddingRight: () => 12 } };
-  const footLines = String(o.footer || '').split(/\r?\n/).filter((l, i, arr) => l.trim() || (i > 0 && i < arr.length - 1));
+      paddingTop: () => z(4), paddingBottom: () => z(4), paddingLeft: () => 6, paddingRight: () => 12 } };
   const content = [
     header,
     title,
-    corr ? { text: 'BẢN ĐIỀU CHỈNH' + (corr.prev ? ` — thay thế bản đã gửi lúc ${corr.prev}` : ''), alignment: 'center', fontSize: 11.5, bold: true, color: '#c62828', margin: [0, 5, 0, 0] } : null,
-    lines.length ? { table: { widths: ['*'], body: [[{ stack: lines, fillColor: '#eef4fb', margin: [12, 4, 8, 4] }]] }, layout: 'noBorders', margin: [0, 10, 0, 0] } : null,
+    lines.length ? { table: { widths: ['*'], body: [[{ stack: lines, fillColor: '#eef4fb', margin: [12, z(4), 8, z(4)] }]] }, layout: 'noBorders', margin: [0, z(9), 0, 0] } : null,
     table,
-    { text: [{ text: `${o.netLabel || 'Còn lại'}  :   `, bold: true, fontSize: 14, color: NAVY }, { text: fmtMoney(e.net), bold: true, fontSize: 18, color: BLUE }], margin: [10, 9, 0, 0] },
-    e.note ? { text: [{ text: 'Ghi chú:   ', color: '#33445e' }, { text: e.note }], margin: [10, 4, 0, 0] } : null,
-    footLines.length ? { table: { widths: [30, '*'], body: [[
+    { text: [{ text: `${o.netLabel || 'Còn lại'}  :   `, bold: true, fontSize: z(14), color: NAVY }, { text: fmtMoney(e.net), bold: true, fontSize: z(18), color: BLUE }], margin: [10, z(8), 0, 0] },
+    e.note ? { text: [{ text: 'Ghi chú:   ', color: '#33445e' }, { text: e.note }], margin: [10, z(3), 0, 0] } : null,
+    footLines.length ? { unbreakable: true, table: { dontBreakRows: true, widths: [30, '*'], body: [[
         { svg: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z M14.5 6.5l3 3" fill="none" stroke="#1c3563" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>', margin: [6, 4, 0, 0] },
-        { stack: footLines.map(l => ({ text: richLine(l), margin: [0, 1, 0, 1] })), fontSize: 11.5, margin: [2, 2, 6, 2] } ]] },
-      layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => '#fbf0c2', paddingTop: () => 5, paddingBottom: () => 5, paddingLeft: () => 6, paddingRight: () => 8 }, margin: [0, 8, 0, 0] } : null
+        { stack: footLines.map(l => ({ text: richLine(l), margin: [0, 1, 0, 1] })), fontSize: z(11.5), margin: [2, 2, 6, 2] } ]] },
+      layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => '#fbf0c2', paddingTop: () => z(5), paddingBottom: () => z(5), paddingLeft: () => 6, paddingRight: () => 8 }, margin: [0, z(8), 0, 0] } : null
   ].filter(Boolean);
-  const doc = { pageSize: 'A4', pageOrientation: 'landscape', pageMargins: [36, 26, 36, 26], content, background: pageDeco,
-    defaultStyle: { font: window.PL_SERIF_OK ? 'Serif' : 'Roboto', fontSize: 12.5, lineHeight: 1.12, color: '#111c2e' },
+  const doc = { pageSize: 'A4', pageOrientation: 'landscape', pageMargins: [36, 24, 36, 24], content, background: pageDeco,
+    defaultStyle: { font: window.PL_SERIF_OK ? 'Serif' : 'Roboto', fontSize: z(12.5), lineHeight: 1.1, color: '#111c2e' },
     info: { title: `Phiếu lương ${o.period} - ${e.name}`, author: o.name } };
   if (protect) {
     const rnd = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
