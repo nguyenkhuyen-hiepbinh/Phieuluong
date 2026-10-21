@@ -551,6 +551,7 @@ table.list td b{color:#1d3554}
               <button class="chip" data-f="err">Có lỗi</button>
               <button class="chip" data-f="warn">Cảnh báo</button>
               <button class="chip" data-f="sent">Đã gửi</button>
+              <button class="chip" data-f="chg">Số liệu thay đổi</button>
               <button class="chip" data-f="todo">Chưa gửi</button>
             </div>
             <input type="text" id="search" placeholder="Tìm tên hoặc email…" style="flex:1 1 180px;max-width:280px;margin-left:auto">
@@ -591,6 +592,24 @@ table.list td b{color:#1d3554}
           </div>
           <div class="bar"><i id="barFill"></i></div>
           <div id="progText" style="font-size:13.5px;color:var(--muted)">Chưa bắt đầu.</div>
+        </div>
+      </div>
+      <div class="card" id="corrCard" style="margin-top:18px">
+        <div class="bhead"><div class="bicon orange"><svg class="i"><use href="#i-send"/></svg></div><div><h3>Gửi bản điều chỉnh</h3><p class="sub">Đã gửi nhưng phiếu sai (thiếu tiền, sai khoản…)? Sửa file Excel, tải lại ở <a href="#" data-go="2">Bước 2</a>, rồi gửi lại cho đúng người cần. Gửi lại bao nhiêu lần cũng được.</p></div></div>
+        <div class="note info" id="corrInfo">Chưa có dữ liệu.</div>
+        <div class="split">
+          <div>
+            <label class="field"><span>Gửi lại cho</span><select id="corrWho">
+              <option value="chg">Người có số liệu thay đổi so với bản đã gửi</option>
+              <option value="sel">Tất cả người đã nhận và đang được chọn ở Bước 3</option></select>
+              <em>Muốn gửi lại cho 1 người cụ thể: ở Bước 3 bấm nút <b>Gửi lại</b> trên dòng của người đó.</em></label>
+            <label class="field"><span>Thêm vào đầu tiêu đề email</span><input type="text" data-k="mail.corrPrefix"></label>
+          </div>
+          <div>
+            <label class="field"><span>Lời nhắn ở đầu email</span><textarea data-k="mail.corrNote" style="min-height:96px"></textarea>
+              <em>Phiếu PDF cũng ghi rõ dòng chữ đỏ "BẢN ĐIỀU CHỈNH" dưới tiêu đề.</em></label>
+            <button class="btn primary" id="btnCorr"><svg class="i"><use href="#i-send"/></svg>Gửi bản điều chỉnh</button>
+          </div>
         </div>
       </div>
       <div class="card" style="margin-top:18px">
@@ -733,7 +752,9 @@ const DEF = {
          netLabel: 'Còn lại', footer: 'Mọi thắc mắc về phiếu lương, vui lòng liên hệ Phòng Kế toán.' },
   mail: { senderName: 'Phòng Kế toán', subject: 'Phiếu tính lương {ky_luong} - {ho_ten}',
           body: 'Kính gửi Thầy/Cô {ho_ten},\n\nPhòng Kế toán {don_vi} gửi Thầy/Cô phiếu tính lương {ky_luong} trong file PDF đính kèm.\nMật khẩu mở file: {goi_y_mat_khau}.\n\nNếu có thắc mắc, Thầy/Cô vui lòng phản hồi email này.\n\nTrân trọng,\n{nguoi_gui}',
-          protect: true, hint: '6 số cuối số CCCD của Thầy/Cô', delay: 3 },
+          protect: true, hint: '6 số cuối số CCCD của Thầy/Cô', delay: 3,
+          corrPrefix: '[ĐIỀU CHỈNH] ',
+          corrNote: 'Phòng Kế toán gửi lại phiếu lương đã được điều chỉnh. Bản này thay thế bản đã gửi trước đó, Thầy/Cô vui lòng sử dụng bản này.' },
   google: { clientId: '' },
   map: null
 };
@@ -799,7 +820,7 @@ function go(step) {
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); go(isNaN(+g.dataset.go) ? g.dataset.go : +g.dataset.go); } });
 function markDone() {
   const has = ST.emps.length > 0;
-  const allSent = has && ST.emps.filter(isSendable).length > 0 && ST.emps.filter(isSendable).every(e => LOG[logKey(e)]?.status === 'sent');
+  const allSent = has && ST.emps.filter(isSendable).length > 0 && ST.emps.filter(isSendable).every(e => LOG[logKey(e)]?.status === 'sent' && !isChanged(e));
   const done = { 1: !!(S.org.name && S.google.clientId), 2: has, 3: has, 4: allSent };
   $$('.step').forEach(b => { const n = +b.dataset.go; b.classList.toggle('done', !!done[n] && !b.classList.contains('active')); });
 }
@@ -1089,18 +1110,26 @@ function rebuild() {
     if (S.mail.protect) { if (!M.pass) e.errors.push('chưa chọn cột mật khẩu'); else if (!e.pass) e.errors.push('không có mật khẩu PDF'); else if (e.pass.length < 4) e.warns.push('mật khẩu ngắn hơn 4 ký tự'); }
     return e;
   });
+  ST.emps.forEach(e => { e.fp = fpOf(e); });
   ST.emps.forEach(e => { const k = 'r' + e.excelRow; if (!(k in ST.include)) ST.include[k] = e.errors.length === 0; if (e.errors.length) ST.include[k] = false; });
   $('#sheetInfo').textContent = `Đọc được ${ST.emps.length} người từ dòng ${h + 2} trở đi (đã bỏ qua dòng trống và dòng "Tổng cộng").`;
   refreshStatus();
 }
 const isSendable = e => e.errors.length === 0 && ST.include['r' + e.excelRow];
+function fnv(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); }
+const fpOf = e => fnv(JSON.stringify([e.name, e.info, e.inc, e.ded, e.incTotal, e.dedTotal, e.net]));
+const isSent = e => LOG[logKey(e)]?.status === 'sent';
+const isChanged = e => { const l = LOG[logKey(e)]; return l?.status === 'sent' && !!l.fp && l.fp !== e.fp; };
+const sendCount = l => l ? (l.count || (l.status === 'sent' ? 1 : 0)) : 0;
 
 /* ========== bảng kiểm tra ========== */
 function statusHtml(e) {
-  const lg = LOG[logKey(e)];
+  const lg = LOG[logKey(e)], n = sendCount(lg);
   let h = '';
-  if (lg?.status === 'sent') h += `<span class="badge sent">Đã gửi ${esc(lg.time)}</span>`;
+  if (lg?.status === 'sent') h += `<span class="badge sent">Đã gửi${n > 1 ? ` ${n} lần` : ''}</span><span class="reason">Lần cuối ${esc(lg.time)}${lg.corrected ? ' (bản điều chỉnh)' : ''}</span>`;
   else if (lg?.status === 'error') h += `<span class="badge err">Gửi lỗi</span><span class="reason">${esc(lg.error)}</span>`;
+  if (isChanged(e)) h += `<span class="badge warn">Số liệu đã thay đổi</span><span class="reason">Khác bản đã gửi — có thể gửi bản điều chỉnh</span>`;
+  if (lg?.corrError) h += `<span class="reason" style="color:var(--err)">Gửi lại lỗi: ${esc(lg.corrError)}</span>`;
   if (e.errors.length) h += `<span class="badge err">Lỗi</span><span class="reason">${esc(e.errors.join('; '))}</span>`;
   else if (e.warns.length) h += `<span class="badge warn">Cảnh báo</span><span class="reason">${esc(e.warns.join('; '))}</span>`;
   else if (!lg) h += `<span class="badge ok">Sẵn sàng</span>`;
@@ -1112,8 +1141,8 @@ function renderTable() {
   if (!has) return;
   const all = ST.emps, nErr = all.filter(e => e.errors.length).length, nWarn = all.filter(e => !e.errors.length && e.warns.length).length;
   const nSent = all.filter(e => LOG[logKey(e)]?.status === 'sent').length, nSel = all.filter(isSendable).length;
-  const sumNet = all.filter(e => !e.errors.length).reduce((s, e) => s + (e.net || 0), 0);
-  $('#stats').innerHTML = `<div class="stat"><b>${all.length}</b><span>người trong file</span></div><div class="stat"><b>${nSel}</b><span>được chọn gửi</span></div><div class="stat"><b style="color:var(--err)">${nErr}</b><span>có lỗi</span></div><div class="stat"><b style="color:var(--warn)">${nWarn}</b><span>cảnh báo</span></div><div class="stat"><b>${nSent}</b><span>đã gửi kỳ này</span></div><div class="stat"><b>${fmtMoney(sumNet)}</b><span>tổng còn lại</span></div>`;
+  const sumNet = all.filter(e => !e.errors.length).reduce((s, e) => s + (e.net || 0), 0), nChg = all.filter(isChanged).length;
+  $('#stats').innerHTML = `<div class="stat"><b>${all.length}</b><span>người trong file</span></div><div class="stat"><b>${nSel}</b><span>được chọn gửi</span></div><div class="stat"><b style="color:var(--err)">${nErr}</b><span>có lỗi</span></div><div class="stat"><b style="color:var(--warn)">${nWarn}</b><span>cảnh báo</span></div><div class="stat"><b>${nSent}</b><span>đã gửi kỳ này</span></div>${nChg ? `<div class="stat"><b style="color:var(--warn)">${nChg}</b><span>số liệu thay đổi</span></div>` : ''}<div class="stat"><b>${fmtMoney(sumNet)}</b><span>tổng còn lại</span></div>`;
   const q = norm(ST.q), f = ST.filter;
   const list = all.filter(e => {
     if (q && !norm(e.name + ' ' + e.email).includes(q)) return false;
@@ -1121,6 +1150,7 @@ function renderTable() {
     if (f === 'err') return e.errors.length > 0 || LOG[logKey(e)]?.status === 'error';
     if (f === 'warn') return !e.errors.length && e.warns.length > 0;
     if (f === 'sent') return sent;
+    if (f === 'chg') return isChanged(e);
     if (f === 'todo') return !sent;
     return true;
   });
@@ -1128,18 +1158,21 @@ function renderTable() {
     <td><input type="checkbox" data-inc="${e.excelRow}" ${ST.include['r' + e.excelRow] ? 'checked' : ''} ${e.errors.length ? 'disabled' : ''} aria-label="Chọn"></td>
     <td>${esc(e.stt)}</td><td><b>${esc(e.name)}</b><span class="reason">Dòng ${e.excelRow}</span></td><td>${esc(e.email)}</td>
     <td class="num">${fmtMoney(e.net)}</td><td>${statusHtml(e)}</td>
-    <td><button class="btn small" data-view="${e.idx}">Xem</button></td></tr>`).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Không có ai khớp bộ lọc.</td></tr>`;
+    <td><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn small" data-view="${e.idx}">Xem</button>${isSent(e) && !e.errors.length ? `<button class="btn small${isChanged(e) ? ' soft' : ''}" data-resend="${e.idx}" title="Gửi bản điều chỉnh cho người này">Gửi lại</button>` : ''}</div></td></tr>`).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Không có ai khớp bộ lọc.</td></tr>`;
   $('#chkAll').checked = all.filter(e => !e.errors.length).every(e => ST.include['r' + e.excelRow]);
 }
 $('#filters').addEventListener('click', e => { const c = e.target.closest('[data-f]'); if (!c) return; ST.filter = c.dataset.f; $$('#filters .chip').forEach(x => x.classList.toggle('on', x === c)); renderTable(); });
 $('#search').addEventListener('input', e => { ST.q = e.target.value; renderTable(); });
 $('#tbody').addEventListener('change', e => { const c = e.target.closest('[data-inc]'); if (!c) return; ST.include['r' + c.dataset.inc] = c.checked; renderTable(); });
 $('#chkAll').addEventListener('change', e => { ST.emps.forEach(x => { if (!x.errors.length) ST.include['r' + x.excelRow] = e.target.checked; }); renderTable(); });
-$('#tbody').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) preview(ST.emps[+b.dataset.view]); });
+$('#tbody').addEventListener('click', e => {
+  const b = e.target.closest('[data-view]'); if (b) preview(ST.emps[+b.dataset.view]);
+  const r = e.target.closest('[data-resend]'); if (r) { const emp = ST.emps[+r.dataset.resend]; go(4); startCorr([emp]); }
+});
 
 /* ========== PDF ========== */
-function fileName(e) { return `PhieuLuong_${e.stt ? pad2(e.stt) + '_' : ''}${slug(e.name)}_${slug(S.org.period)}.pdf`; }
-function buildDoc(e, protect) {
+function fileName(e, corr) { return `PhieuLuong_${e.stt ? pad2(e.stt) + '_' : ''}${slug(e.name)}_${slug(S.org.period)}${corr ? '_dieu_chinh' : ''}.pdf`; }
+function buildDoc(e, protect, corr) {
   const o = S.org, cellAmt = v => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right' });
   const head = [];
   if (o.logo) head.push({ image: o.logo, fit: [78, 78], width: 82 });
@@ -1167,6 +1200,7 @@ function buildDoc(e, protect) {
     o.sub ? { text: o.sub, alignment: 'right', fontSize: 10, margin: [0, 6, 0, 0] } : null,
     { text: `${o.title || ''} ${o.period || ''}`.trim(), fontSize: 17, bold: true, alignment: 'center', margin: [0, 18, 0, 0] },
     o.note ? { text: o.note, alignment: 'center', fontSize: 12, margin: [0, 2, 0, 0] } : null,
+    corr ? { text: 'BẢN ĐIỀU CHỈNH' + (corr.prev ? ` — thay thế bản đã gửi lúc ${corr.prev}` : ''), alignment: 'center', fontSize: 11, bold: true, color: '#c62828', margin: [0, 4, 0, 0] } : null,
     info.length ? { table: { widths: ['auto', '*', 'auto', '*'], body: info }, layout: { ...lines, hLineWidth: () => 0, vLineWidth: () => 0, paddingTop: () => 3, paddingBottom: () => 3, paddingLeft: () => 0, paddingRight: () => 8 }, margin: [0, 16, 0, 0] } : null,
     { table: { headerRows: 1, widths: ['*', 92, '*', 92], body }, layout: lines, margin: [0, 14, 0, 0] },
     { table: { widths: ['auto'], body: [[{ text: [{ text: `${o.netLabel || 'Còn lại'}:   ` }, { text: fmtMoney(e.net), bold: true }], fontSize: 13.5, fillColor: '#fff176', margin: [4, 2, 8, 2] }]] }, layout: 'noBorders', margin: [0, 14, 0, 0] },
@@ -1183,7 +1217,7 @@ function buildDoc(e, protect) {
   }
   return doc;
 }
-const pdfBase64 = (e, protect) => new Promise((res, rej) => { try { pdfMake.createPdf(buildDoc(e, protect)).getBase64(res); } catch (err) { rej(err); } });
+const pdfBase64 = (e, protect, corr) => new Promise((res, rej) => { try { pdfMake.createPdf(buildDoc(e, protect, corr)).getBase64(res); } catch (err) { rej(err); } });
 const pdfBlob = (e, protect) => new Promise((res, rej) => { try { pdfMake.createPdf(buildDoc(e, protect)).getBlob(res); } catch (err) { rej(err); } });
 let lastUrl;
 async function preview(e) {
@@ -1280,16 +1314,18 @@ function fillTpl(tpl, e) {
   const v = { ho_ten: e.name, ky_luong: S.org.period, don_vi: S.org.name, nguoi_gui: S.mail.senderName, goi_y_mat_khau: S.mail.hint, con_lai: fmtMoney(e.net), stt: e.stt };
   return t.replace(/\{(\w+)\}/g, (m, k) => k in v ? (v[k] ?? '') : m);
 }
-async function buildRaw(e, to, prefix = '') {
-  const pdf = await pdfBase64(e, S.mail.protect), b = 'pl_' + Math.random().toString(36).slice(2);
+async function buildRaw(e, to, prefix = '', corr = null) {
+  const pdf = await pdfBase64(e, S.mail.protect, corr), b = 'pl_' + Math.random().toString(36).slice(2);
+  if (corr) prefix = prefix + (S.mail.corrPrefix || '');
+  const bodyTxt = (corr && S.mail.corrNote ? fillTpl(S.mail.corrNote, e) + '\n\n' : '') + fillTpl(S.mail.body, e);
   const fromName = (S.mail.senderName || '').replace(/["\\]/g, '');
   const hdr = [
     G.email ? `From: ${encWord(fromName)} <${G.email}>` : null,
     `To: ${to}`, `Subject: ${encWord(prefix + fillTpl(S.mail.subject, e).replace(/[\r\n]+/g, ' '))}`,
     'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${b}"`
   ].filter(Boolean).join('\r\n');
-  const fn = fileName(e);
-  const msg = `${hdr}\r\n\r\n--${b}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64utf8(fillTpl(S.mail.body, e).replace(/\r?\n/g, '\r\n')))}\r\n--${b}\r\nContent-Type: application/pdf; name="${fn}"\r\nContent-Disposition: attachment; filename="${fn}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(pdf)}\r\n--${b}--\r\n`;
+  const fn = fileName(e, corr);
+  const msg = `${hdr}\r\n\r\n--${b}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64utf8(bodyTxt.replace(/\r?\n/g, '\r\n')))}\r\n--${b}\r\nContent-Type: application/pdf; name="${fn}"\r\nContent-Disposition: attachment; filename="${fn}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(pdf)}\r\n--${b}--\r\n`;
   return btoa(msg).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 class SendErr extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
@@ -1324,6 +1360,11 @@ function renderSend() {
   $('#sendSummary').innerHTML = !ST.emps.length ? 'Chưa có dữ liệu.' :
     `Kỳ <b>${esc(S.org.period)}</b>: sẽ gửi <b>${q.length}</b> người` + (skip ? `, bỏ qua ${skip} người đã nhận` : '') + (nErr ? `, ${nErr} người có lỗi` : '') + (nOff ? `, ${nOff} người bỏ chọn` : '') + (q.length ? `. Ước tính ${mins} phút.` : '.') + (q.length > 480 ? '<br><span style="color:var(--warn)">Hơn 480 người: Gmail miễn phí có thể dừng giữa chừng, phần còn lại gửi vào hôm sau.</span>' : '');
   $('#btnStart').disabled = RUN.on || !q.length;
+  const nChg = ST.emps.filter(e => !e.errors.length && isChanged(e)).length, nSentSel = ST.emps.filter(e => isSendable(e) && isSent(e)).length, cl = corrList();
+  $('#corrInfo').className = 'note ' + (nChg ? 'warn' : 'info');
+  $('#corrInfo').innerHTML = !ST.emps.length ? 'Chưa có dữ liệu.' : !ST.emps.some(isSent) ? 'Chưa ai nhận phiếu kỳ này, chưa cần gửi bản điều chỉnh.' :
+    (nChg ? `<b>${nChg} người</b> đã nhận phiếu nhưng số liệu trong file hiện tại khác bản đã gửi.` : 'Số liệu của những người đã nhận chưa thay đổi so với bản đã gửi.') + ` Lựa chọn hiện tại sẽ gửi lại cho <b>${cl.length}</b> người.` + (nSentSel && !ST.emps.some(e => LOG[logKey(e)]?.fp) ? '<br>Lưu ý: những phiếu gửi trước khi có chức năng này không so sánh được số liệu, hãy chọn "Tất cả người đã nhận" hoặc gửi lại từng người ở Bước 3.' : '');
+  $('#btnCorr').disabled = RUN.on || !cl.length;
   $('#btnTest').disabled = RUN.on || !ST.emps.length;
 }
 function refreshStatus() { markDone(); if ($('#p3').classList.contains('show')) renderTable(); if ($('#p4').classList.contains('show')) renderSend(); }
@@ -1355,32 +1396,51 @@ $('#btnStart').onclick = async () => {
   const list = queue(); if (!list.length) return toast('Không còn ai cần gửi.');
   try { if (!(G.token && Date.now() < G.exp)) await login(); } catch (e) { return; }
   if (!confirm(`Gửi phiếu lương ${S.org.period} cho ${list.length} người từ tài khoản ${G.email || 'Google của bạn'}?`)) return;
+  runSend(list, 'first');
+};
+function corrList() { return $('#corrWho').value === 'sel' ? ST.emps.filter(e => isSendable(e) && isSent(e)) : ST.emps.filter(e => !e.errors.length && isChanged(e)); }
+async function startCorr(list) {
+  if (RUN.on) return toast('Đang gửi, hãy chờ xong lượt hiện tại.');
+  if (!list.length) return toast('Không có ai cần gửi bản điều chỉnh.');
+  try { if (!(G.token && Date.now() < G.exp)) await login(); } catch (e) { return; }
+  const names = list.slice(0, 8).map(e => '• ' + e.name).join('\n') + (list.length > 8 ? `\n… và ${list.length - 8} người khác` : '');
+  if (!confirm(`Gửi BẢN ĐIỀU CHỈNH phiếu lương ${S.org.period} cho ${list.length} người?\n\n${names}`)) return;
+  runSend(list, 'corr');
+}
+$('#btnCorr').onclick = () => startCorr(corrList());
+$('#corrWho').onchange = () => renderSend();
+async function runSend(list, mode) {
+  const corrMode = mode === 'corr', label = corrMode ? 'bản điều chỉnh' : 'email';
   Object.assign(RUN, { on: true, paused: false, stop: false });
   $('#btnPause').classList.remove('hidden'); $('#btnStop').classList.remove('hidden'); $('#btnPause').textContent = 'Tạm dừng'; renderSend();
   try { RUN.wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
-  let ok = 0, bad = 0, netFails = 0; const t0 = Date.now();
-  addLog(`Bắt đầu gửi ${list.length} email.`);
+  let ok = 0, bad = 0; const t0 = Date.now();
+  addLog(`Bắt đầu gửi ${list.length} ${label}.`);
   for (let i = 0; i < list.length; i++) {
     if (RUN.stop) break;
     if (RUN.paused) { setProg(i, list.length, `Đang tạm dừng ở ${i}/${list.length}. Bấm <b>Tiếp tục</b>.`); await waitResume(); if (RUN.stop) break; }
-    const e = list[i];
+    const e = list[i], key = logKey(e), prev = LOG[key];
     const left = Math.round((Date.now() - t0) / Math.max(1, i) * (list.length - i) / 60000);
-    setProg(i, list.length, `Đang gửi ${i + 1}/${list.length}: <b>${esc(e.name)}</b> · ✅ ${ok} · ❌ ${bad}${i ? ` · còn khoảng ${left} phút` : ''}`);
+    setProg(i, list.length, `Đang gửi ${label} ${i + 1}/${list.length}: <b>${esc(e.name)}</b> · ✅ ${ok} · ❌ ${bad}${i ? ` · còn khoảng ${left} phút` : ''}`);
     let attempt = 0;
     while (true) {
       try {
         await ensureToken();
-        const id = await gmailSend(await buildRaw(e, e.email));
-        LOG[logKey(e)] = { status: 'sent', time: timeNow() + ' ' + today(), id, name: e.name, email: e.email, stt: e.stt, period: S.org.period };
-        ok++; netFails = 0; addLog(`✅ ${e.name} <${e.email}>`); break;
+        const corr = corrMode ? { prev: prev?.time || '' } : null;
+        const id = await gmailSend(await buildRaw(e, e.email, '', corr));
+        const now = timeNow() + ' ' + today();
+        const sends = [...(prev?.sends || (prev?.status === 'sent' ? Array.from({ length: sendCount(prev) }, (_, j) => ({ time: j === sendCount(prev) - 1 ? prev.time : '', kind: j ? 'corr' : 'first' })) : [])), { time: now, kind: corrMode ? 'corr' : 'first' }];
+        LOG[key] = { status: 'sent', time: now, id, name: e.name, email: e.email, stt: e.stt, period: S.org.period, fp: e.fp, count: sends.length, sends, corrected: corrMode || !!prev?.corrected };
+        ok++; addLog(`✅ ${corrMode ? '[Điều chỉnh] ' : ''}${e.name} <${e.email}>`); break;
       } catch (err) {
         const k = err.kind || 'bad';
         if (k === 'auth') { addLog('⛔ ' + err.message + '. Bấm Tiếp tục để đăng nhập lại.', true); RUN.paused = true; $('#btnPause').textContent = 'Tiếp tục'; setProg(i, list.length, '⛔ Phiên đăng nhập hết hạn. Bấm <b>Tiếp tục</b> để đăng nhập lại.'); await waitResume(); if (RUN.stop) break; continue; }
         if (k === 'rate' && attempt < 2) { attempt++; addLog('Gmail yêu cầu chậm lại, chờ 60 giây…'); await sleep(60000); continue; }
-        if (k === 'net' && attempt < 2) { attempt++; netFails++; addLog('Mất mạng, thử lại sau 10 giây…', true); await sleep(10000); continue; }
-        LOG[logKey(e)] = { status: 'error', time: timeNow() + ' ' + today(), error: err.message, name: e.name, email: e.email, stt: e.stt, period: S.org.period };
-        bad++; addLog(`❌ ${e.name} <${e.email}>: ${err.message}`, true);
-        if (k === 'quota') { RUN.stop = true; addLog('⛔ Gmail đã dừng vì hết hạn mức trong ngày. Hôm sau mở lại trang và bấm gửi tiếp.', true); }
+        if (k === 'net' && attempt < 2) { attempt++; addLog('Mất mạng, thử lại sau 10 giây…', true); await sleep(10000); continue; }
+        if (corrMode && prev?.status === 'sent') LOG[key] = { ...prev, corrError: err.message };
+        else LOG[key] = { status: 'error', time: timeNow() + ' ' + today(), error: err.message, name: e.name, email: e.email, stt: e.stt, period: S.org.period };
+        bad++; addLog(`❌ ${corrMode ? '[Điều chỉnh] ' : ''}${e.name} <${e.email}>: ${err.message}`, true);
+        if (k === 'quota') { RUN.stop = true; addLog('⛔ Gmail đã dừng vì hết hạn mức trong ngày. Hôm sau mở lại trang và gửi tiếp.', true); }
         if (k === 'net') { RUN.paused = true; $('#btnPause').textContent = 'Tiếp tục'; addLog('⛔ Mạng không ổn định, đã tạm dừng. Kiểm tra mạng rồi bấm Tiếp tục.', true); }
         break;
       }
@@ -1392,15 +1452,15 @@ $('#btnStart').onclick = async () => {
   RUN.on = false; try { RUN.wake?.release(); } catch (e) {}
   $('#btnPause').classList.add('hidden'); $('#btnStop').classList.add('hidden');
   const total = ok + bad;
-  setProg(total, list.length, `<b>Xong.</b> ✅ ${ok} thành công · ❌ ${bad} lỗi${total < list.length ? ` · ${list.length - total} chưa gửi` : ''}. ${bad || total < list.length ? 'Bấm <b>Bắt đầu gửi</b> lần nữa để gửi tiếp cho người còn lại.' : ''}`);
+  setProg(total, list.length, `<b>Xong${corrMode ? ' (bản điều chỉnh)' : ''}.</b> ✅ ${ok} thành công · ❌ ${bad} lỗi${total < list.length ? ` · ${list.length - total} chưa gửi` : ''}. ${bad || total < list.length ? (corrMode ? 'Bấm <b>Gửi bản điều chỉnh</b> lần nữa để gửi tiếp.' : 'Bấm <b>Bắt đầu gửi</b> lần nữa để gửi tiếp cho người còn lại.') : ''}`);
   addLog(`Kết thúc: ${ok} thành công, ${bad} lỗi.`);
   lsSet(LS_LOG, LOG); renderSend(); markDone();
-  if (ok) toast(`Đã gửi ${ok} email. Nhớ tải báo cáo để lưu lại.`, 5000);
-};
+  if (ok) toast(`Đã gửi ${ok} ${label}. Nhớ tải báo cáo để lưu lại.`, 5000);
+}
 $('#btnReport').onclick = () => {
   if (!ST.emps.length) return toast('Chưa có dữ liệu.');
-  const rows = ST.emps.map(e => { const l = LOG[logKey(e)]; return { 'Kỳ lương': S.org.period, 'Dòng Excel': e.excelRow, 'STT': e.stt, 'Họ và tên': e.name, 'Email': e.email, 'Còn lại': e.net, 'Trạng thái': l?.status === 'sent' ? 'Đã gửi' : l?.status === 'error' ? 'Gửi lỗi' : e.errors.length ? 'Không gửi (lỗi dữ liệu)' : ST.include['r' + e.excelRow] ? 'Chưa gửi' : 'Không chọn', 'Thời gian': l?.time || '', 'Ghi chú': l?.error || e.errors.join('; ') || e.warns.join('; ') }; });
-  const ws = XLSX.utils.json_to_sheet(rows); ws['!cols'] = [{ wch: 14 }, { wch: 9 }, { wch: 6 }, { wch: 24 }, { wch: 28 }, { wch: 13 }, { wch: 22 }, { wch: 20 }, { wch: 50 }];
+  const rows = ST.emps.map(e => { const l = LOG[logKey(e)]; return { 'Kỳ lương': S.org.period, 'Dòng Excel': e.excelRow, 'STT': e.stt, 'Họ và tên': e.name, 'Email': e.email, 'Còn lại': e.net, 'Trạng thái': l?.status === 'sent' ? 'Đã gửi' : l?.status === 'error' ? 'Gửi lỗi' : e.errors.length ? 'Không gửi (lỗi dữ liệu)' : ST.include['r' + e.excelRow] ? 'Chưa gửi' : 'Không chọn', 'Thời gian': l?.time || '', 'Số lần gửi': sendCount(l) || '', 'Ghi chú': [l?.corrected ? 'Đã gửi bản điều chỉnh' : '', isChanged(e) ? 'Số liệu đã thay đổi, chưa gửi điều chỉnh' : '', l?.corrError ? 'Gửi lại lỗi: ' + l.corrError : '', l?.error || e.errors.join('; ') || e.warns.join('; ')].filter(Boolean).join('; '), 'Mã đối chiếu': l?.fp || '' }; });
+  const ws = XLSX.utils.json_to_sheet(rows); ws['!cols'] = [{ wch: 14 }, { wch: 9 }, { wch: 6 }, { wch: 24 }, { wch: 28 }, { wch: 13 }, { wch: 22 }, { wch: 20 }, { wch: 10 }, { wch: 50 }, { wch: 12 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Bao cao'); XLSX.writeFile(wb, `Bao_cao_gui_luong_${slug(S.org.period)}.xlsx`);
 };
 $('#btnClearLog').onclick = () => {
@@ -1417,9 +1477,9 @@ function periodsOf() {
   for (const [k, v] of Object.entries(LOG)) { const p = v.period || k.split('|')[0]; (g[p] ||= []).push({ ...v, period: p, email: v.email || k.split('|').slice(1).join('|') }); }
   return Object.entries(g).map(([p, list]) => ({ p, list: list.sort((a, b) => (parseFloat(a.stt) || 1e9) - (parseFloat(b.stt) || 1e9) || String(a.name).localeCompare(String(b.name), 'vi')), last: Math.max(0, ...list.map(x => parseT(x.time))) })).sort((a, b) => b.last - a.last);
 }
-function histRows(list) { return list.map(v => ({ 'Kỳ lương': v.period, 'STT': v.stt || '', 'Họ và tên': v.name || '', 'Email': v.email, 'Trạng thái': v.status === 'sent' ? 'Đã gửi' : 'Gửi lỗi', 'Thời gian': v.time || '', 'Ghi chú': v.error || '' })); }
+function histRows(list) { return list.map(v => ({ 'Kỳ lương': v.period, 'STT': v.stt || '', 'Họ và tên': v.name || '', 'Email': v.email, 'Trạng thái': v.status === 'sent' ? 'Đã gửi' : 'Gửi lỗi', 'Thời gian': v.time || '', 'Số lần gửi': sendCount(v) || '', 'Ghi chú': [v.corrected ? 'Đã gửi bản điều chỉnh' : '', v.corrError ? 'Gửi lại lỗi: ' + v.corrError : '', v.error || ''].filter(Boolean).join('; '), 'Mã đối chiếu': v.fp || '' })); }
 function exportHist(list, name) {
-  const ws = XLSX.utils.json_to_sheet(histRows(list)); ws['!cols'] = [{ wch: 16 }, { wch: 6 }, { wch: 24 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 40 }];
+  const ws = XLSX.utils.json_to_sheet(histRows(list)); ws['!cols'] = [{ wch: 16 }, { wch: 6 }, { wch: 24 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 10 }, { wch: 40 }, { wch: 12 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Lich su'); XLSX.writeFile(wb, name);
 }
 function renderHistory() {
@@ -1437,7 +1497,7 @@ function renderHistory() {
         <button class="btn small danger" data-hd="${gi}">Xóa kỳ này</button></div>
         <div class="tablebox"><table class="list"><thead><tr><th>STT</th><th>Họ và tên</th><th>Email</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
         <tbody>${g.list.map(v => `<tr data-hs="${esc(norm((v.name || '') + ' ' + v.email))}"><td>${esc(v.stt || '')}</td><td><b>${esc(v.name || '')}</b></td><td>${esc(v.email)}</td>
-          <td>${v.status === 'sent' ? '<span class="badge sent">Đã gửi</span>' : `<span class="badge err">Gửi lỗi</span><span class="reason">${esc(v.error || '')}</span>`}${v.restored ? '<span class="reason">(nạp từ báo cáo)</span>' : ''}</td>
+          <td>${v.status === 'sent' ? `<span class="badge sent">Đã gửi${sendCount(v) > 1 ? ' ' + sendCount(v) + ' lần' : ''}</span>${v.corrected ? '<span class="badge warn">Có điều chỉnh</span>' : ''}` : `<span class="badge err">Gửi lỗi</span><span class="reason">${esc(v.error || '')}</span>`}${v.restored ? '<span class="reason">(nạp từ báo cáo)</span>' : ''}</td>
           <td>${esc(v.time || '')}</td></tr>`).join('')}</tbody></table></div></div></details>`;
   }).join('');
   box._ps = ps;
@@ -1467,7 +1527,10 @@ $('#histFile').addEventListener('change', async e => {
           if (!period || !email || !status) continue;
           const k = `${period}|${email.toLowerCase()}`, cur = LOG[k];
           if (cur && (cur.status === 'sent' || status === 'error')) { skip++; continue; }
-          LOG[k] = { status, time: String(r['Thời gian'] || ''), name: String(r['Họ và tên'] || ''), email, stt: String(r['STT'] || ''), period, restored: true, ...(status === 'error' ? { error: String(r['Ghi chú'] || '') } : {}) };
+          const cnt = parseInt(r['Số lần gửi'], 10) || (status === 'sent' ? 1 : 0), fpv = String(r['Mã đối chiếu'] || '').trim();
+          LOG[k] = { status, time: String(r['Thời gian'] || ''), name: String(r['Họ và tên'] || ''), email, stt: String(r['STT'] || ''), period, restored: true,
+            ...(cnt ? { count: cnt } : {}), ...(/^[0-9a-f]{8}$/.test(fpv) ? { fp: fpv } : {}), ...(/điều chỉnh/i.test(String(r['Ghi chú'] || '')) && status === 'sent' ? { corrected: true } : {}),
+            ...(status === 'error' ? { error: String(r['Ghi chú'] || '') } : {}) };
           add++; per.add(period);
         }
       }
