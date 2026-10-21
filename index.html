@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gửi phiếu lương</title>
+<title>Phiếu Lương NK</title>
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%232563eb'/%3E%3Cpath d='M15 11h13l6 6v20a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2V13a2 2 0 0 1 2-2z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,273 +16,478 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
-  --bg:#f3f5f8; --surface:#ffffff; --surface-2:#f7f9fc; --line:#dde3ea; --line-strong:#c5cfdb;
-  --text:#18212d; --muted:#5d6b7c; --accent:#1f4e79; --accent-2:#2c6aa3; --accent-soft:#e7eff8;
-  --ok:#1e7a46; --ok-soft:#e3f4ea; --warn:#9a6200; --warn-soft:#fff4dc; --err:#b42318; --err-soft:#fde8e6;
-  --hl:#fff176; --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0f141b; --surface:#171e27; --surface-2:#1c2530; --line:#2a3542; --line-strong:#3a4757;
-    --text:#e6ebf1; --muted:#9aa8b8; --accent:#7fb2e5; --accent-2:#9cc5ef; --accent-soft:#1d2d40;
-    --ok:#5fd08f; --ok-soft:#163223; --warn:#f0b54a; --warn-soft:#33270f; --err:#ff8a7e; --err-soft:#3a1916;
-    --shadow:none;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0f141b; --surface:#171e27; --surface-2:#1c2530; --line:#2a3542; --line-strong:#3a4757;
-  --text:#e6ebf1; --muted:#9aa8b8; --accent:#7fb2e5; --accent-2:#9cc5ef; --accent-soft:#1d2d40;
-  --ok:#5fd08f; --ok-soft:#163223; --warn:#f0b54a; --warn-soft:#33270f; --err:#ff8a7e; --err-soft:#3a1916;
-  --shadow:none;
+  --bg:#f4f7fb; --surface:#fff; --surface-2:#f7f9fd; --line:#e4eaf2; --line-strong:#cfd9e6;
+  --text:#15243b; --muted:#637389; --navy:#163b65; --blue:#2563eb; --blue-d:#1d4ed8; --blue-soft:#eaf2ff;
+  --ok:#15803d; --ok-soft:#e8f7ed; --warn:#a16207; --warn-soft:#fff7df; --err:#b42318; --err-soft:#fff1ef;
+  --radius:16px; --shadow:0 1px 3px rgba(20,42,74,.04),0 10px 28px rgba(20,42,74,.05);
+  --accent:var(--blue); --accent-2:var(--blue); --accent-soft:var(--blue-soft);
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--text);font:15px/1.5 "Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font:14px/1.6 "Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
 button,input,select,textarea{font:inherit;color:inherit}
-a{color:var(--accent-2)}
-.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
-/* top bar */
-.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
-.top .wrap{display:flex;align-items:center;gap:12px;min-height:60px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto}
-.brand svg{flex:none}
-.brand small{display:block;font-weight:400;font-size:12px;color:var(--muted);line-height:1.2}
-.gchip{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--line-strong);flex:none}
-.dot.on{background:var(--ok)}
-/* steps */
-.steps{display:flex;gap:6px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
-.steps::-webkit-scrollbar{display:none}
-.step{flex:none;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px 7px 8px;cursor:pointer;font-weight:500;font-size:14px;color:var(--muted)}
-.step b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--muted)}
-.step.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
-.step.active b{background:var(--accent);color:#fff;border-color:var(--accent)}
-.step.done b{background:var(--ok);border-color:var(--ok);color:#fff}
-/* layout */
-main{padding:12px 0 60px}
-section.page{display:none}
-section.page.show{display:block}
-h2{font-size:21px;margin:10px 0 2px}
-.lead{color:var(--muted);margin:0 0 16px}
-.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);min-width:0}
-.card h3{font-size:15px;margin:0 0 4px}
-.card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
-.field{display:block;margin-bottom:12px}
-.field>span{display:block;font-size:13px;font-weight:500;margin-bottom:4px}
-.field>em{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:4px}
-input[type=text],input[type=email],input[type=number],select,textarea{width:100%;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:38px}
-textarea{min-height:170px;resize:vertical;line-height:1.45}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-2);outline-offset:-1px;border-color:transparent}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.row>.grow{flex:1 1 160px;min-width:0}
-.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:4px 0 12px;cursor:pointer}
-.check input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 14px;min-height:38px;cursor:pointer;font-weight:500;font-size:14px;white-space:nowrap}
-.btn:hover{background:var(--surface-2)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primary:hover{filter:brightness(1.08)}
-:root[data-theme="dark"] .btn.primary{color:#0f141b}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0f141b}}
-.btn.danger{color:var(--err);border-color:var(--err)}
-.btn.small{min-height:30px;padding:4px 10px;font-size:13px}
-.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.big{min-height:46px;padding:10px 22px;font-size:15px}
-.note{border-radius:10px;padding:10px 14px;font-size:14px;margin:0 0 14px;border:1px solid}
-.note.info{background:var(--accent-soft);border-color:transparent}
-.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--text)}
-.note.err{background:var(--err-soft);border-color:transparent}
-.note.ok{background:var(--ok-soft);border-color:transparent}
+a{color:var(--blue);text-underline-offset:3px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 clamp(16px,3vw,32px)}
 .hidden{display:none!important}
-code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
-code{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;word-break:break-all}
-.logo-box{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-.logo-prev{width:64px;height:64px;border:1px dashed var(--line-strong);border-radius:10px;display:grid;place-items:center;overflow:hidden;background:var(--surface-2);flex:none;font-size:11px;color:var(--muted);text-align:center}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- header ---------- */
+.top{background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;backdrop-filter:blur(12px)}
+.top .wrap{display:flex;align-items:center;gap:16px;min-height:76px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+.brand{display:flex;align-items:center;gap:13px;margin-right:auto;min-width:0}
+.brand .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(145deg,#2f6ff0,#1d4ed8);display:grid;place-items:center;flex:none;box-shadow:0 6px 14px rgba(37,99,235,.25)}
+.brand .logo svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.brand b{display:block;font-size:20px;letter-spacing:-.03em;color:var(--navy);line-height:1.2}
+.brand small{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+.nav{display:flex;gap:4px}
+.navlink{display:flex;align-items:center;gap:7px;border:0;background:none;padding:9px 12px;border-radius:10px;color:#4a5b72;font-weight:500;cursor:pointer;position:relative}
+.navlink:hover{background:var(--surface-2);color:var(--navy)}
+.navlink.active{color:var(--blue)}
+.navlink.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-15px;height:3px;border-radius:3px;background:var(--blue)}
+.gbtn{display:flex;align-items:center;gap:11px;border:1px solid var(--line-strong);background:#fff;border-radius:12px;padding:8px 14px 8px 12px;cursor:pointer;text-align:left;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.gbtn:hover{border-color:#a9bdd6;box-shadow:0 3px 10px rgba(20,42,74,.08)}
+.gbtn b,.guser b{display:block;font-size:13.5px;font-weight:600;line-height:1.25;color:var(--text)}
+.gbtn small,.guser small{display:block;font-size:11.5px;color:var(--muted);line-height:1.3}
+.guser{display:flex;align-items:center;gap:10px;border:1px solid #cdebd7;background:var(--ok-soft);border-radius:12px;padding:7px 8px 7px 13px;min-width:0}
+.guser b{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#c4cfdc;flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 0 4px #d3f0dd}
+
+/* ---------- stepper ---------- */
+.stepper{display:flex;align-items:center;gap:10px;padding:22px 0 6px;overflow-x:auto;scrollbar-width:none}
+.stepper::-webkit-scrollbar{display:none}
+.step{flex:none;display:flex;align-items:center;gap:12px;border:0;background:none;padding:6px 8px 14px;cursor:pointer;text-align:left;position:relative;border-radius:12px}
+.step .num{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#e8edf4;color:#7a889b;font-weight:700;font-size:17px;flex:none;transition:.15s}
+.step b{display:block;font-size:14.5px;font-weight:600;color:#33445b;line-height:1.3}
+.step small{display:block;font-size:12px;color:var(--muted);white-space:nowrap}
+.step:hover .num{background:#dde5f0}
+.step.active .num{background:var(--blue);color:#fff;box-shadow:0 6px 14px rgba(37,99,235,.3)}
+.step.active b{color:var(--blue)}
+.step.active::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:4px;border-radius:4px;background:var(--blue)}
+.step.done:not(.active) .num{background:var(--ok);color:#fff;font-size:0}
+.step.done:not(.active) .num::after{content:"✓";font-size:18px}
+.sep{flex:1 1 30px;min-width:24px;border-top:2px dashed #cfd9e6;margin-bottom:8px}
+
+/* ---------- layout ---------- */
+main{padding:18px 0 72px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+body[data-step="1"] .layout{grid-template-columns:minmax(0,1fr) 320px}
+body:not([data-step="1"]) .aside{display:none}
+section.page{display:none;min-width:0}
+section.page.show{display:block;animation:enter .2s ease both}
+@keyframes enter{from{opacity:.6;transform:translateY(4px)}to{opacity:1;transform:none}}
+.phead{display:flex;gap:16px;align-items:center;margin:0 0 20px}
+.picon{width:56px;height:56px;border-radius:15px;background:var(--blue);display:grid;place-items:center;flex:none;box-shadow:0 8px 18px rgba(37,99,235,.25)}
+.picon svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+h2{font-size:clamp(21px,2.2vw,26px);margin:0;letter-spacing:-.035em;color:var(--navy);line-height:1.25}
+.lead{color:var(--muted);margin:3px 0 0;max-width:780px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:clamp(16px,2.2vw,26px)}
+.panel>.phead{margin-bottom:22px}
+.grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+.card,.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(16px,2vw,22px);box-shadow:var(--shadow);min-width:0}
+.box{box-shadow:none;background:#fcfdff}
+.card h3,.box h3{font-size:15.5px;margin:0;color:#1d3554;letter-spacing:-.01em}
+.card .sub,.box .sub{color:var(--muted);font-size:12.5px;margin:2px 0 16px}
+.bhead{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
+.bicon{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--blue-soft);color:var(--blue)}
+.bicon.orange{background:#fff1e3;color:#e8770e}
+.bicon.green{background:var(--ok-soft);color:var(--ok)}
+.bicon.violet{background:#f1ecff;color:#6d4ad8}
+.bhead .sub{margin-bottom:0!important}
+
+/* ---------- tabs ---------- */
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:4px;margin-bottom:20px}
+.tab{display:flex;align-items:center;justify-content:center;gap:9px;border:0;background:none;border-radius:10px;padding:10px 12px;color:#3d4f67;font-weight:500;cursor:pointer;white-space:nowrap}
+.tab:hover{background:#eef3fa}
+.tab.on{background:var(--blue);color:#fff;font-weight:600;box-shadow:0 4px 10px rgba(37,99,235,.22)}
+.pane{display:none}
+.pane.on{display:block;animation:enter .18s ease both}
+.split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px}
+
+/* ---------- form ---------- */
+.frow{display:grid;grid-template-columns:150px minmax(0,1fr);gap:6px 14px;align-items:center;margin-bottom:12px}
+.frow>label{font-size:13px;font-weight:500;color:#33465e}
+.frow>label .req{color:var(--err)}
+.frow>em{grid-column:2;font-style:normal;font-size:12px;color:var(--muted);margin-top:-2px}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-size:13px;font-weight:500;margin-bottom:5px;color:#33465e}
+.field>em{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:5px}
+input[type=text],input[type=email],input[type=number],select,textarea{width:100%;border:1px solid #d6e0eb;background:#fff;border-radius:10px;padding:9px 12px;min-height:42px;color:#172943;transition:border-color .15s,box-shadow .15s}
+textarea{min-height:190px;resize:vertical;line-height:1.5}
+input::placeholder,textarea::placeholder{color:#9aa7b8}
+input:hover,select:hover,textarea:hover{border-color:#aebed2}
+input:focus,select:focus,textarea:focus{outline:0;border-color:#6b9bfa;box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+.period{display:flex;gap:8px}
+.period select{flex:1}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row>.grow{flex:1 1 160px;min-width:0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;margin:6px 0 14px;cursor:pointer}
+.check input{margin-top:3px;width:17px;height:17px;accent-color:var(--blue);flex:none}
+.vars{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px}
+.vars code{cursor:pointer}
+.vars code:hover{border-color:var(--blue);color:var(--blue)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #d6e0eb;background:#fff;color:#304761;border-radius:10px;padding:8px 15px;min-height:40px;cursor:pointer;font-weight:600;font-size:13.5px;white-space:nowrap;text-decoration:none;transition:background .15s,border-color .15s,box-shadow .15s}
+.btn:hover{background:#f7faff;border-color:#b9c9dc}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.2)}
+.btn.primary:hover{background:var(--blue-d);border-color:var(--blue-d)}
+.btn.soft{background:var(--blue-soft);border-color:#d3e3ff;color:var(--blue)}
+.btn.danger{color:var(--err);border-color:#f0c8c4}
+.btn.danger:hover{background:#fff4f2}
+.btn.small{min-height:33px;padding:5px 11px;font-size:12.5px;border-radius:8px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.big{min-height:50px;padding:10px 26px;font-size:15px;border-radius:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid rgba(37,99,235,.3);outline-offset:2px}
+.note{border-radius:12px;padding:12px 15px;font-size:13.5px;margin:0 0 16px;border:1px solid;line-height:1.6}
+.note.info{background:#eff6ff;border-color:#dceafe;color:#244c7c}
+.note.warn{background:#fff8e5;border-color:#f5e5ad;color:#785313}
+.note.err{background:var(--err-soft);border-color:#f5d0cb;color:#922a22}
+.note.ok{background:var(--ok-soft);border-color:#cdebd7;color:#17623a}
+.note.flex{display:flex;gap:12px;align-items:flex-start}
+.note.flex svg{margin-top:2px}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+code{background:#f4f7fb;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:#334b6a;word-break:break-all}
+.upload{border:1.5px dashed #c9d6e6;border-radius:14px;padding:16px;display:flex;gap:16px;align-items:center;background:#fff;margin-bottom:14px}
+.logo-prev{width:76px;height:76px;border-radius:14px;display:grid;place-items:center;overflow:hidden;background:var(--blue-soft);flex:none;color:var(--blue)}
 .logo-prev img{max-width:100%;max-height:100%}
-/* drop zone */
-.drop{display:block;border:2px dashed var(--line-strong);border-radius:var(--radius);padding:30px 16px;text-align:center;background:var(--surface);cursor:pointer;transition:.15s}
-.drop.over{border-color:var(--accent);background:var(--accent-soft)}
-.drop strong{display:block;font-size:16px;margin-bottom:4px}
+.logo-prev svg{width:32px;height:32px}
+.upload b{display:block;font-size:14px}
+.upload small{display:block;color:var(--muted);font-size:12px;margin-bottom:8px}
+.panel-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+.footer-actions{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap;align-items:center}
+details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}
+
+/* ---------- aside ---------- */
+.aside{display:flex;flex-direction:column;gap:16px;position:sticky;top:96px}
+.quick{background:linear-gradient(180deg,#f3f7ff,#fff);border:1px solid #dfe8f6;border-radius:var(--radius);padding:20px}
+.quick h3{display:flex;align-items:center;gap:10px;margin:0 0 2px;font-size:16px;color:var(--navy)}
+.quick .ico{width:38px;height:38px;border-radius:50%;background:#fff6d8;display:grid;place-items:center;color:#d39b00;flex:none}
+.quick>p{margin:0 0 16px 48px;color:var(--muted);font-size:12.5px}
+.qsteps{list-style:none;margin:0;padding:0;position:relative}
+.qsteps li{display:flex;gap:13px;position:relative;padding-bottom:16px;cursor:pointer}
+.qsteps li:last-child{padding-bottom:0}
+.qsteps li::before{content:"";position:absolute;left:16px;top:34px;bottom:2px;border-left:2px solid #d6e2f5}
+.qsteps li:last-child::before{display:none}
+.qsteps .n{width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;font-weight:700;display:grid;place-items:center;flex:none;font-size:14px}
+.qsteps b{display:block;font-size:13.5px;color:#1d3554}
+.qsteps span{display:block;font-size:12.5px;color:var(--muted);line-height:1.5}
+.qsteps li:hover b{color:var(--blue)}
+.secure{background:#fff7f7;border:1px solid #f5cfcf;border-radius:var(--radius);padding:18px 20px}
+.secure h3{display:flex;align-items:center;gap:9px;margin:0 0 10px;font-size:15px;color:#b42318}
+.secure ul{margin:0;padding-left:18px;font-size:13px;color:#4b3a3a}
+.secure li{margin-bottom:5px}
+.secure li::marker{color:#d64545}
+
+/* ---------- excel / mapping ---------- */
+.drop{display:block;border:2px dashed #b9c9dc;border-radius:var(--radius);padding:clamp(26px,5vw,44px) 16px;text-align:center;background:linear-gradient(180deg,#fff,#f8fbff);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:#4d82ed;background:#f0f6ff}
+.drop .dicon{width:56px;height:56px;border-radius:16px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;margin:0 auto 12px}
+.drop .dicon svg{width:28px;height:28px}
+.drop strong{display:block;font-size:16.5px;color:var(--navy);margin-bottom:3px}
 .drop span{color:var(--muted);font-size:13px}
-/* mapping */
 .maplist{display:flex;flex-direction:column;gap:8px}
-.mapitem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto;gap:6px;align-items:center}
-.mapitem input,.mapitem select{min-height:34px;padding:5px 8px;font-size:14px}
-.maphead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 34px;gap:6px;font-size:12px;color:var(--muted);margin-bottom:2px}
-.icon-btn{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;display:grid;place-items:center;color:var(--muted)}
-.icon-btn:hover{color:var(--err);border-color:var(--err)}
-.kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;align-items:center;margin-bottom:8px}
+.mapitem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 36px;gap:6px;align-items:center}
+.mapitem input,.mapitem select{min-height:36px;padding:5px 9px;font-size:13px;border-radius:8px}
+.maphead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 36px;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.icon-btn{width:36px;height:36px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{color:var(--err);border-color:#f0c8c4}
+.kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;align-items:center;margin-bottom:9px}
 .kv>label{font-size:13px;font-weight:500}
-@media (max-width:520px){.kv{grid-template-columns:1fr;gap:3px}}
-/* table */
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+
+/* ---------- table / stats ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
-.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-:root[data-theme="dark"] .chip.on{color:#0f141b}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.on{color:#0f141b}}
-.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
-table.list{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
-table.list th,table.list td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-table.list th{font-size:12px;font-weight:600;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+.chip{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 12px;font-size:12.5px;cursor:pointer;color:#5c6c82;font-weight:600}
+.chip:hover{background:#f5f8fd}
+.chip.on{background:var(--blue-soft);border-color:#cfe0ff;color:var(--blue-d)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+table.list{border-collapse:collapse;width:100%;min-width:680px;font-size:13px}
+table.list th,table.list td{padding:11px 13px;border-bottom:1px solid #edf1f6;text-align:left;vertical-align:top}
+table.list th{font-size:11.5px;font-weight:600;color:#61728a;background:#f6f8fc;position:sticky;top:0;z-index:1}
+table.list tbody tr:hover{background:#f8fbff}
 table.list tr:last-child td{border-bottom:0}
 table.list td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 table.list tr.off td{opacity:.55}
-.badge{display:inline-block;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:500;margin:1px 4px 1px 0}
-.badge.ok{background:var(--ok-soft);color:var(--ok)}
-.badge.warn{background:var(--warn-soft);color:var(--warn)}
+table.list td b{color:#1d3554}
+.badge{display:inline-block;border-radius:7px;padding:2px 8px;font-size:11.5px;font-weight:600;margin:1px 4px 1px 0}
+.badge.ok{background:var(--ok-soft);color:#167443}
+.badge.warn{background:var(--warn-soft);color:#965d08}
 .badge.err{background:var(--err-soft);color:var(--err)}
-.badge.sent{background:var(--accent-soft);color:var(--accent)}
-.reason{display:block;font-size:12px;color:var(--muted);margin-top:2px}
-.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:110px}
-.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.badge.sent{background:var(--blue-soft);color:var(--blue-d)}
+.reason{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:24px;letter-spacing:-.03em;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1.3}
 .stat span{font-size:12px;color:var(--muted)}
-/* progress */
-.bar{height:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:10px 0}
-.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
-.log{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:13px}
-.log div{padding:6px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+.bar{height:9px;background:#e8eef6;border-radius:999px;overflow:hidden;margin:12px 0}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:99px;transition:width .3s}
+.log{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:13px}
+.log div{padding:8px 12px;border-bottom:1px solid #e9eef5;display:flex;gap:10px}
 .log div:last-child{border-bottom:0}
 .log .t{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
 .log .e{color:var(--err)}
-/* modal */
-.modal{position:fixed;inset:0;background:rgba(10,15,22,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
-.modal.show{display:flex}
-.modal .box{background:var(--surface);border-radius:var(--radius);width:min(900px,100%);height:min(92vh,1100px);display:flex;flex-direction:column;overflow:hidden}
-.modal .head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.modal .head b{margin-right:auto}
-.modal iframe{flex:1;border:0;width:100%;background:#525659}
-.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#1d2733;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:60;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
-.toast.show{opacity:1;transform:translateX(-50%)}
-/* guide */
-.guide ol{padding-left:22px;margin:6px 0 12px}
-.guide li{margin-bottom:7px}
-.guide h3{margin-top:4px}
-.kbd{display:inline-block;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:13px;background:var(--surface-2)}
-.footer-actions{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
-details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}
-.hist{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow)}
-.hist>summary{cursor:pointer;padding:14px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none}
+.hist{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.hist>summary{cursor:pointer;padding:15px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none}
 .hist>summary::-webkit-details-marker{display:none}
 .hist>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
 .hist[open]>summary::before{transform:rotate(90deg)}
-.hist>summary b{font-size:15px;margin-right:auto}
-.hist .inner{padding:0 16px 16px}
-.hist .tablebox{max-height:420px;overflow:auto}
+.hist>summary b{font-size:15px;margin-right:auto;color:var(--navy)}
+.hist .inner{padding:0 18px 18px}
+.hist .tablebox{max-height:55vh;overflow:auto}
+
+/* ---------- modal / toast ---------- */
+.modal{position:fixed;inset:0;background:rgba(10,20,36,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;backdrop-filter:blur(4px)}
+.modal.show{display:flex}
+.modal .box2{background:#fff;border-radius:16px;width:min(900px,100%);height:min(92vh,1100px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(10,25,48,.3)}
+.modal .head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:#fbfcff}
+.modal .head b{margin-right:auto}
+.modal iframe{flex:1;border:0;width:100%;background:#525659}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#16263d;color:#fff;padding:11px 17px;border-radius:12px;font-size:13.5px;opacity:0;transition:.25s;z-index:60;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(10,25,48,.25);pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.guide ol{padding-left:22px;margin:6px 0 12px;line-height:1.7}
+.guide li{margin-bottom:6px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1080px){
+  body[data-step="1"] .layout{grid-template-columns:minmax(0,1fr)}
+  .aside{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+}
+@media (max-width:900px){
+  .split{grid-template-columns:minmax(0,1fr)}
+  .tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .top .wrap{min-height:64px;gap:10px}
+  .brand .logo{width:40px;height:40px}
+  .brand b{font-size:17px}
+  .nav{order:3;width:100%;justify-content:flex-start;margin:0 -6px}
+  .navlink{padding:6px 10px;font-size:13px}
+  .navlink.active::after{bottom:-9px}
+  .gbox{margin-left:auto}
+  .gbtn small{display:none}
+  .guser small{display:none}
+  .guser b{max-width:140px}
+  .stepper{gap:4px;padding-top:14px}
+  .step{padding:4px 6px 12px;gap:8px}
+  .step .num{width:34px;height:34px;font-size:14px}
+  .step small{display:none}
+  .step b{font-size:13px}
+  .sep{min-width:12px;flex-basis:12px}
+  .phead{gap:12px;align-items:flex-start}
+  .picon{width:46px;height:46px;border-radius:13px}
+  .picon svg{width:23px;height:23px}
+  .frow{grid-template-columns:minmax(0,1fr);gap:4px}
+  .frow>em{grid-column:1}
+  .tab{font-size:13px;padding:9px 6px;gap:6px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .toolbar>input{max-width:none!important;flex-basis:100%!important}
+  .footer-actions>.btn,.panel-foot>.btn{flex:1 1 160px}
+  .kv{grid-template-columns:minmax(0,1fr);gap:3px}
+  .upload{flex-direction:column;text-align:center}
+}
+@media (max-width:420px){
+  .brand small{display:none}
+  .gbtn{padding:7px 10px}
+  .gbtn b{font-size:12.5px}
+  .mapitem,.maphead{grid-template-columns:minmax(0,1fr) 36px}
+  .maphead{display:none}
+  .mapitem input{grid-column:1}
+  .mapitem select{grid-column:1}
+  .mapitem .icon-btn{grid-column:2;grid-row:1 / span 2}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
-<body>
+<body data-step="1">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v7M14.2 12.6c-.4-.6-1.2-.9-2.2-.9-1.3 0-2 .6-2 1.4 0 1.9 4.4.9 4.4 2.9 0 .9-.9 1.5-2.3 1.5-1 0-1.9-.4-2.3-1"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M10 21v-3h4v3"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 3v12M7 10l5 5 5-5"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 15V3M7 8l5-5 5 5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.6M12 17h.01"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+</svg>
+
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1f4e79"/><path d="M8 11.5h18v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 8 23.5z" fill="#fff"/><path d="M8 12l9 6.5 9-6.5" fill="none" stroke="#1f4e79" stroke-width="1.8" stroke-linejoin="round"/><circle cx="25" cy="24" r="5" fill="#ffd54a"/><path d="M23 24.2l1.4 1.4 2.6-2.8" fill="none" stroke="#1f4e79" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <div>Gửi phiếu lương<small id="orgSmall">Phiếu lương PDF qua Gmail</small></div>
+      <div class="logo"><svg viewBox="0 0 24 24"><use href="#i-doc"/></svg></div>
+      <div><b>Phiếu Lương NK</b><small id="orgSmall">Gửi phiếu lương PDF qua Gmail</small></div>
     </div>
-    <div class="gchip">
-      <span class="dot" id="gDot"></span><span id="gText">Chưa đăng nhập Google</span>
-      <button class="btn small primary" id="btnLogin">Đăng nhập Google</button>
-      <button class="btn small ghost hidden" id="btnLogout">Thoát</button>
+    <nav class="nav" aria-label="Điều hướng phụ">
+      <button class="navlink" data-go="5"><svg class="i"><use href="#i-clock"/></svg>Lịch sử</button>
+      <button class="navlink" data-go="guide"><svg class="i"><use href="#i-help"/></svg>Hướng dẫn</button>
+    </nav>
+    <div class="gbox">
+      <button class="gbtn" id="btnLogin">
+        <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+        <span><b id="gTitle">Đăng nhập Google</b><small id="gText">Kết nối để gửi email</small></span>
+      </button>
+      <div class="guser hidden" id="gUser">
+        <span class="dot" id="gDot"></span>
+        <span style="min-width:0"><b id="gEmail"></b><small>Đã kết nối Gmail</small></span>
+        <button class="btn small ghost" id="btnLogout">Thoát</button>
+      </div>
     </div>
   </div>
 </header>
 
 <div class="wrap">
-  <nav class="steps" id="steps">
-    <button class="step active" data-go="1"><b>1</b>Thiết lập</button>
-    <button class="step" data-go="2"><b>2</b>Dữ liệu Excel</button>
-    <button class="step" data-go="3"><b>3</b>Kiểm tra</button>
-    <button class="step" data-go="4"><b>4</b>Gửi email</button>
-    <button class="step" data-go="5"><b>5</b>Lịch sử</button>
-    <button class="step" data-go="guide"><b>?</b>Hướng dẫn cài đặt</button>
+  <nav class="stepper" id="steps" aria-label="Các bước">
+    <button class="step active" data-go="1"><span class="num">1</span><span><b>Thiết lập</b><small>Thông tin &amp; mẫu email</small></span></button>
+    <span class="sep"></span>
+    <button class="step" data-go="2"><span class="num">2</span><span><b>Tải Excel</b><small>Đọc dữ liệu bảng lương</small></span></button>
+    <span class="sep"></span>
+    <button class="step" data-go="3"><span class="num">3</span><span><b>Kiểm tra phiếu</b><small>Xem trước từng người</small></span></button>
+    <span class="sep"></span>
+    <button class="step" data-go="4"><span class="num">4</span><span><b>Gửi email</b><small>Gửi phiếu lương hàng loạt</small></span></button>
   </nav>
 
   <main>
-    <div class="note warn hidden" id="fileWarn">Bạn đang mở trang trực tiếp từ máy tính. Vẫn xem thử được, nhưng <b>muốn gửi email phải đưa trang lên GitHub Pages</b>. Xem mục <a href="#" data-go="guide">Hướng dẫn cài đặt</a>.</div>
+    <div class="note warn hidden" id="fileWarn">Bạn đang mở trang trực tiếp từ máy tính. Vẫn xem thử được, nhưng <b>muốn gửi email phải mở bằng địa chỉ web</b> (phieuluong-nk.onrender.com).</div>
     <div class="note err hidden" id="libWarn"></div>
+
+    <div class="layout">
+    <div class="maincol">
 
     <!-- BƯỚC 1 -->
     <section class="page show" id="p1">
-      <h2>Bước 1 — Thiết lập</h2>
-      <p class="lead">Chỉ cần làm một lần. Mọi thiết lập được lưu trên trình duyệt này. Mỗi tháng chỉ cần đổi <b>Kỳ lương</b>.</p>
-      <div class="grid">
-        <div class="card">
-          <h3>Thông tin đơn vị trên phiếu</h3>
-          <p class="sub">Phần đầu của phiếu lương PDF.</p>
-          <div class="logo-box">
-            <div class="logo-prev" id="logoPrev">Chưa có logo</div>
-            <div class="row">
-              <label class="btn small">Chọn logo<input type="file" id="logoFile" accept="image/png,image/jpeg" hidden></label>
-              <button class="btn small ghost" id="logoClear">Bỏ logo</button>
-            </div>
-          </div>
-          <label class="field"><span>Tên đơn vị</span><input type="text" data-k="org.name"></label>
-          <label class="field"><span>Dòng phụ (phòng ban, điện thoại)</span><input type="text" data-k="org.sub"></label>
-          <div class="row">
-            <label class="field grow"><span>Tiêu đề phiếu</span><input type="text" data-k="org.title"></label>
-            <label class="field grow"><span>Kỳ lương</span><input type="text" data-k="org.period"></label>
-          </div>
-          <label class="field"><span>Ghi chú dưới tiêu đề</span><input type="text" data-k="org.note" placeholder="Ví dụ: ( Bảng nháp )"></label>
-          <div class="row">
-            <label class="field grow"><span>Nhãn dòng cuối</span><input type="text" data-k="org.netLabel"></label>
-          </div>
-          <label class="field"><span>Ghi chú cuối phiếu</span><input type="text" data-k="org.footer"></label>
-          <button class="btn" id="btnSample">Xem phiếu mẫu</button>
+      <div class="panel">
+        <div class="phead">
+          <div class="picon"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></div>
+          <div><h2>Bước 1: Thiết lập thông tin</h2><p class="lead">Thông tin đơn vị, mẫu email và kết nối Gmail. Làm một lần, trình duyệt tự nhớ. Mỗi tháng chỉ cần đổi <b>Kỳ lương</b>.</p></div>
+        </div>
+        <div class="tabs" role="tablist">
+          <button class="tab on" data-tab="org" role="tab"><svg class="i"><use href="#i-building"/></svg>Thông tin đơn vị</button>
+          <button class="tab" data-tab="mail" role="tab"><svg class="i"><use href="#i-mail"/></svg>Mẫu email</button>
+          <button class="tab" data-tab="google" role="tab"><svg class="i"><use href="#i-link"/></svg>Kết nối Gmail</button>
+          <button class="tab" data-tab="backup" role="tab"><svg class="i"><use href="#i-save"/></svg>Sao lưu &amp; khôi phục</button>
         </div>
 
-        <div class="card">
-          <h3>Nội dung email</h3>
-          <p class="sub">Biến tự thay: <code>{ho_ten}</code> <code>{ky_luong}</code> <code>{don_vi}</code> <code>{nguoi_gui}</code> <code>{goi_y_mat_khau}</code> <code>{con_lai}</code></p>
-          <label class="field"><span>Tên người gửi</span><input type="text" data-k="mail.senderName"></label>
-          <label class="field"><span>Tiêu đề email</span><input type="text" data-k="mail.subject"></label>
-          <label class="field"><span>Nội dung email</span><textarea data-k="mail.body"></textarea></label>
-          <label class="check"><input type="checkbox" data-k="mail.protect"><span>Đặt mật khẩu cho file PDF <span class="reason">Nên bật, vì phiếu có số CCCD và số tài khoản.</span></span></label>
-          <label class="field"><span>Gợi ý mật khẩu (ghi trong email)</span><input type="text" data-k="mail.hint"></label>
+        <div class="pane on" data-pane="org">
+          <div class="split">
+            <div class="box">
+              <div class="bhead"><div class="bicon"><svg class="i"><use href="#i-building"/></svg></div><div><h3>Thông tin trên phiếu</h3><p class="sub">Hiển thị ở phần đầu phiếu lương PDF.</p></div></div>
+              <div class="frow"><label for="fName">Tên đơn vị <span class="req">*</span></label><input type="text" id="fName" data-k="org.name"></div>
+              <div class="frow"><label for="fSub">Dòng phụ</label><input type="text" id="fSub" data-k="org.sub" placeholder="Phòng ban, điện thoại"></div>
+              <div class="frow"><label for="fTitle">Tiêu đề phiếu</label><input type="text" id="fTitle" data-k="org.title"></div>
+              <div class="frow"><label for="selMonth">Kỳ lương <span class="req">*</span></label>
+                <div class="period"><select id="selMonth" aria-label="Tháng"></select><select id="selYear" aria-label="Năm"></select></div></div>
+              <div class="frow"><label for="fNote">Ghi chú dưới tiêu đề</label><input type="text" id="fNote" data-k="org.note" placeholder="Ví dụ: ( Bảng nháp )"></div>
+              <div class="frow"><label for="fNet">Nhãn dòng cuối</label><input type="text" id="fNet" data-k="org.netLabel"></div>
+              <div class="frow" style="margin-bottom:0"><label for="fFoot">Ghi chú cuối phiếu</label><input type="text" id="fFoot" data-k="org.footer"></div>
+            </div>
+            <div class="box">
+              <div class="bhead"><div class="bicon orange"><svg class="i"><use href="#i-image"/></svg></div><div><h3>Logo đơn vị</h3><p class="sub">In ở góc trái phiếu lương (không bắt buộc).</p></div></div>
+              <div class="upload">
+                <div class="logo-prev" id="logoPrev"></div>
+                <div><b>Tải logo</b><small>PNG, JPG — tự thu nhỏ</small>
+                  <div class="row"><label class="btn small soft">Chọn tệp<input type="file" id="logoFile" accept="image/png,image/jpeg" hidden></label><button class="btn small ghost" id="logoClear">Bỏ logo</button></div></div>
+              </div>
+              <button class="btn" id="btnSample" style="width:100%;margin-bottom:14px"><svg class="i"><use href="#i-eye"/></svg>Xem phiếu mẫu</button>
+              <div class="note ok flex" style="margin:0"><svg class="i"><use href="#i-shield"/></svg><div><b>Thiết lập lưu ngay trên trình duyệt này.</b><br>Không gửi lên máy chủ nào. Nên tải file sao lưu ở tab <a href="#" data-tabgo="backup">Sao lưu &amp; khôi phục</a>.</div></div>
+            </div>
+          </div>
         </div>
 
-        <div class="card">
-          <h3>Kết nối Google</h3>
-          <p class="sub">Dán Client ID tạo trong Google Cloud. Cách tạo xem ở <a href="#" data-go="guide">Hướng dẫn cài đặt</a>.</p>
-          <label class="field"><span>Google Client ID</span><input type="text" data-k="google.clientId" placeholder="xxxxxxxx.apps.googleusercontent.com" class="mono"><em>Không phải mật khẩu, lưu ở đây là an toàn.</em></label>
-          <div class="field"><span>Địa chỉ trang này (dán vào ô "Authorized JavaScript origins")</span>
-            <div class="row"><code id="originText" class="grow"></code><button class="btn small" id="btnCopyOrigin">Sao chép</button></div>
-          </div>
-          <div class="note info" id="gNote">Sau khi lưu Client ID, bấm <b>Đăng nhập Google</b> ở góc trên.</div>
-          <details class="adv"><summary>Sao lưu / khôi phục thiết lập</summary>
-            <p class="sub" style="margin-top:8px">Dùng khi chuyển sang máy khác hoặc trình duyệt khác.</p>
-            <div class="row">
-              <button class="btn small" id="btnExportCfg">Tải file thiết lập</button>
-              <label class="btn small">Nạp file thiết lập<input type="file" id="cfgFile" accept=".json" hidden></label>
-              <button class="btn small danger" id="btnResetCfg">Khôi phục mặc định</button>
+        <div class="pane" data-pane="mail">
+          <div class="split">
+            <div class="box">
+              <div class="bhead"><div class="bicon"><svg class="i"><use href="#i-mail"/></svg></div><div><h3>Nội dung email</h3><p class="sub">Bấm vào biến để chèn vào nội dung.</p></div></div>
+              <label class="field"><span>Tên người gửi</span><input type="text" data-k="mail.senderName"></label>
+              <label class="field"><span>Tiêu đề email</span><input type="text" data-k="mail.subject"></label>
+              <label class="field" style="margin-bottom:8px"><span>Nội dung email</span><textarea data-k="mail.body" id="fBody"></textarea></label>
+              <div class="vars" id="vars"><code>{ho_ten}</code><code>{ky_luong}</code><code>{don_vi}</code><code>{nguoi_gui}</code><code>{goi_y_mat_khau}</code><code>{con_lai}</code></div>
             </div>
-          </details>
+            <div class="box">
+              <div class="bhead"><div class="bicon green"><svg class="i"><use href="#i-lock"/></svg></div><div><h3>Mật khẩu file PDF</h3><p class="sub">Phiếu có số CCCD và số tài khoản, nên bật.</p></div></div>
+              <label class="check"><input type="checkbox" data-k="mail.protect"><span>Đặt mật khẩu cho file PDF<span class="reason">Mã hóa AES-256. Cột lấy mật khẩu chọn ở Bước 2.</span></span></label>
+              <label class="field"><span>Gợi ý mật khẩu (ghi trong email)</span><input type="text" data-k="mail.hint"></label>
+              <div class="note info" style="margin:0">Biến <code>{goi_y_mat_khau}</code> trong email sẽ được thay bằng câu gợi ý này. Nếu tắt mật khẩu, dòng chứa biến đó tự bị bỏ.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="google">
+          <div class="split">
+            <div class="box">
+              <div class="bhead"><div class="bicon"><svg class="i"><use href="#i-link"/></svg></div><div><h3>Google Client ID</h3><p class="sub">Tạo trong Google Cloud — xem <a href="#" data-go="guide">Hướng dẫn</a>.</p></div></div>
+              <label class="field"><span>Client ID</span><input type="text" data-k="google.clientId" placeholder="xxxxxxxx.apps.googleusercontent.com" class="mono">
+                <em>Google Client ID là mã nhận diện công khai của ứng dụng OAuth, không phải Client Secret. Không dán mật khẩu, access token hoặc dữ liệu lương vào trường này.</em></label>
+              <div class="field"><span>Địa chỉ trang này (dán vào "Authorized JavaScript origins")</span>
+                <div class="row"><code id="originText" class="grow" style="padding:9px 10px"></code><button class="btn small" id="btnCopyOrigin"><svg class="i"><use href="#i-copy"/></svg>Sao chép</button></div></div>
+            </div>
+            <div class="box">
+              <div class="bhead"><div class="bicon green"><svg class="i"><use href="#i-shield"/></svg></div><div><h3>Trạng thái kết nối</h3><p class="sub">Đăng nhập bằng Gmail dùng để gửi lương.</p></div></div>
+              <div class="note info" id="gNote">Sau khi lưu Client ID, bấm <b>Đăng nhập Google</b> ở góc trên.</div>
+              <p class="sub" style="margin:0">Lần đầu đăng nhập, Google báo "chưa xác minh" → bấm <b>Tiếp tục</b>, và nhớ tick ô <b>Gửi email thay mặt bạn</b>. Phiên đăng nhập tự hết hạn sau khoảng 1 giờ.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="backup">
+          <div class="split">
+            <div class="box">
+              <div class="bhead"><div class="bicon violet"><svg class="i"><use href="#i-save"/></svg></div><div><h3>Sao lưu thiết lập</h3><p class="sub">Dùng khi đổi máy, đổi trình duyệt hoặc lỡ xóa dữ liệu duyệt web.</p></div></div>
+              <div class="row">
+                <button class="btn" id="btnExportCfg"><svg class="i"><use href="#i-save"/></svg>Tải file thiết lập</button>
+                <label class="btn">Nạp file thiết lập<input type="file" id="cfgFile" accept=".json" hidden></label>
+              </div>
+              <p class="sub" style="margin:14px 0 0">File thiết lập gồm thông tin đơn vị, logo, mẫu email, Client ID và cách ghép cột — không chứa dữ liệu lương.</p>
+            </div>
+            <div class="box">
+              <div class="bhead"><div class="bicon orange"><svg class="i"><use href="#i-clock"/></svg></div><div><h3>Lịch sử gửi &amp; khôi phục</h3><p class="sub">Lịch sử ai đã nhận phiếu nằm ở mục Lịch sử.</p></div></div>
+              <div class="row"><button class="btn" data-go="5">Mở Lịch sử</button><button class="btn danger" id="btnResetCfg">Khôi phục mặc định</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-foot">
+          <span class="sub" style="margin:0;color:var(--muted)">Mọi thay đổi được lưu tự động.</span>
+          <button class="btn primary big" data-go="2">Tiếp tục: Tải Excel<svg class="i"><use href="#i-arrow"/></svg></button>
         </div>
       </div>
-      <div class="footer-actions"><span></span><button class="btn primary big" data-go="2">Tiếp: Tải dữ liệu Excel →</button></div>
     </section>
 
     <!-- BƯỚC 2 -->
     <section class="page" id="p2">
-      <h2>Bước 2 — Tải bảng lương Excel</h2>
-      <p class="lead">File được đọc ngay trên máy bạn, không tải lên máy chủ nào.</p>
+      <div class="phead">
+        <div class="picon"><svg viewBox="0 0 24 24"><use href="#i-sheet"/></svg></div>
+        <div><h2>Bước 2: Tải bảng lương Excel</h2><p class="lead">File được đọc ngay trên máy bạn, không tải lên máy chủ nào.</p></div>
+      </div>
       <label class="drop" id="drop">
         <input type="file" id="xlsFile" accept=".xlsx,.xls,.xlsm,.csv" hidden>
+        <div class="dicon"><svg class="i"><use href="#i-upload"/></svg></div>
         <strong id="dropTitle">Kéo thả file Excel vào đây hoặc bấm để chọn</strong>
         <span id="dropSub">.xlsx, .xls — mỗi người một dòng</span>
       </label>
       <p style="margin:10px 0 0;font-size:13px;color:var(--muted)">Chưa có file đúng dạng? <a href="#" id="btnTemplate">Tải file Excel mẫu</a></p>
 
-      <div id="mapWrap" class="hidden" style="margin-top:18px">
-        <div class="card" style="margin-bottom:16px">
+      <div id="mapWrap" class="hidden" style="margin-top:20px">
+        <div class="card" style="margin-bottom:18px">
           <div class="row">
             <label class="field grow" style="margin:0"><span>Trang tính (sheet)</span><select id="selSheet"></select></label>
             <label class="field" style="margin:0;width:150px"><span>Dòng tiêu đề cột</span><input type="number" id="inpHeader" min="1"></label>
           </div>
           <p class="sub" style="margin:10px 0 0" id="sheetInfo"></p>
         </div>
-        <h3 style="margin:0 0 4px">Ghép cột Excel vào phiếu lương</h3>
-        <p class="lead" style="margin-bottom:12px">Chương trình đã tự đoán. Kiểm tra lại, sửa nếu sai. Lần sau sẽ tự nhớ.</p>
+        <h3 style="margin:0 0 2px;font-size:17px;color:var(--navy)">Ghép cột Excel vào phiếu lương</h3>
+        <p class="lead" style="margin-bottom:14px">Chương trình đã tự đoán. Kiểm tra lại, sửa nếu sai. Lần sau sẽ tự nhớ.</p>
         <div class="grid">
           <div class="card">
             <h3>Cột bắt buộc</h3><p class="sub">Dùng để gửi email và đặt mật khẩu.</p>
@@ -288,110 +495,116 @@ details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 
             <div class="kv"><label>Email</label><select data-m="email"></select></div>
             <div class="kv"><label>STT trên phiếu</label><select data-m="stt"></select></div>
             <div class="kv"><label>Mật khẩu PDF lấy từ</label><select data-m="pass"></select></div>
-            <div class="kv"><label>Chỉ lấy</label><div class="row"><input type="number" min="0" max="20" data-m="passLast" style="width:80px"><span style="font-size:13px;color:var(--muted)">ký tự cuối (0 = lấy toàn bộ)</span></div></div>
+            <div class="kv"><label>Chỉ lấy</label><div class="row"><input type="number" min="0" max="20" data-m="passLast" style="width:80px"><span style="font-size:12.5px;color:var(--muted)">ký tự cuối (0 = lấy toàn bộ)</span></div></div>
           </div>
           <div class="card">
             <h3>Thông tin cá nhân</h3><p class="sub">In ở phần đầu phiếu, theo thứ tự.</p>
             <div class="maphead"><span>Nhãn trên phiếu</span><span>Cột Excel</span><span></span></div>
             <div class="maplist" data-list="info"></div>
-            <button class="btn small" data-add="info" style="margin-top:8px">+ Thêm dòng</button>
+            <button class="btn small" data-add="info" style="margin-top:10px">+ Thêm dòng</button>
           </div>
           <div class="card">
             <h3>Thu nhập</h3><p class="sub">Cột trái của bảng.</p>
             <div class="maphead"><span>Nhãn trên phiếu</span><span>Cột Excel</span><span></span></div>
             <div class="maplist" data-list="inc"></div>
-            <button class="btn small" data-add="inc" style="margin-top:8px">+ Thêm dòng</button>
+            <button class="btn small" data-add="inc" style="margin-top:10px">+ Thêm dòng</button>
           </div>
           <div class="card">
             <h3>Khấu trừ</h3><p class="sub">Cột phải của bảng.</p>
             <div class="maphead"><span>Nhãn trên phiếu</span><span>Cột Excel</span><span></span></div>
             <div class="maplist" data-list="ded"></div>
-            <button class="btn small" data-add="ded" style="margin-top:8px">+ Thêm dòng</button>
+            <button class="btn small" data-add="ded" style="margin-top:10px">+ Thêm dòng</button>
           </div>
           <div class="card">
-            <h3>Tổng cộng</h3><p class="sub">Nếu chọn cột Excel, chương trình sẽ đối chiếu với tổng tự tính và cảnh báo khi lệch.</p>
+            <h3>Tổng cộng</h3><p class="sub">Nếu chọn cột Excel, chương trình đối chiếu với tổng tự tính và cảnh báo khi lệch.</p>
             <div class="kv"><label>Tổng thu nhập</label><select data-m="incTotal"></select></div>
             <div class="kv"><label>Tổng khấu trừ</label><select data-m="dedTotal"></select></div>
             <div class="kv"><label>Còn lại</label><select data-m="net"></select></div>
           </div>
         </div>
-        <div class="footer-actions"><button class="btn" data-go="1">← Thiết lập</button><button class="btn primary big" data-go="3">Tiếp: Kiểm tra →</button></div>
+        <div class="footer-actions"><button class="btn" data-go="1"><svg class="i"><use href="#i-back"/></svg>Thiết lập</button><button class="btn primary big" data-go="3">Tiếp tục: Kiểm tra<svg class="i"><use href="#i-arrow"/></svg></button></div>
       </div>
     </section>
 
     <!-- BƯỚC 3 -->
     <section class="page" id="p3">
-      <h2>Bước 3 — Kiểm tra từng người</h2>
-      <p class="lead">Bấm <b>Xem</b> để mở phiếu PDF. Người có lỗi sẽ không được gửi.</p>
+      <div class="phead">
+        <div class="picon"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></div>
+        <div><h2>Bước 3: Kiểm tra phiếu lương</h2><p class="lead">Bấm <b>Xem</b> để mở phiếu PDF của từng người. Người có lỗi sẽ không được gửi.</p></div>
+      </div>
       <div id="p3Empty" class="note info">Chưa có dữ liệu. Hãy tải file Excel ở <a href="#" data-go="2">Bước 2</a>.</div>
       <div id="p3Body" class="hidden">
         <div class="stats" id="stats"></div>
-        <div class="toolbar">
-          <div class="chips" id="filters">
-            <button class="chip on" data-f="all">Tất cả</button>
-            <button class="chip" data-f="err">Có lỗi</button>
-            <button class="chip" data-f="warn">Cảnh báo</button>
-            <button class="chip" data-f="sent">Đã gửi</button>
-            <button class="chip" data-f="todo">Chưa gửi</button>
+        <div class="card">
+          <div class="toolbar">
+            <div class="chips" id="filters">
+              <button class="chip on" data-f="all">Tất cả</button>
+              <button class="chip" data-f="err">Có lỗi</button>
+              <button class="chip" data-f="warn">Cảnh báo</button>
+              <button class="chip" data-f="sent">Đã gửi</button>
+              <button class="chip" data-f="todo">Chưa gửi</button>
+            </div>
+            <input type="text" id="search" placeholder="Tìm tên hoặc email…" style="flex:1 1 180px;max-width:280px;margin-left:auto">
+            <button class="btn small" id="btnZip"><svg class="i"><use href="#i-save"/></svg>Tải tất cả PDF (.zip)</button>
           </div>
-          <input type="text" id="search" placeholder="Tìm tên hoặc email…" style="flex:1 1 180px;max-width:280px">
-          <button class="btn small" id="btnZip">Tải tất cả PDF (.zip)</button>
+          <div class="tablebox">
+            <table class="list">
+              <thead><tr><th style="width:36px"><input type="checkbox" id="chkAll" title="Chọn tất cả"></th><th>STT</th><th>Họ và tên</th><th>Email</th><th style="text-align:right">Còn lại</th><th>Tình trạng</th><th></th></tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="tablebox">
-          <table class="list">
-            <thead><tr><th style="width:36px"><input type="checkbox" id="chkAll" title="Chọn tất cả"></th><th>STT</th><th>Họ và tên</th><th>Email</th><th style="text-align:right">Còn lại</th><th>Tình trạng</th><th></th></tr></thead>
-            <tbody id="tbody"></tbody>
-          </table>
-        </div>
-        <div class="footer-actions"><button class="btn" data-go="2">← Dữ liệu</button><button class="btn primary big" data-go="4">Tiếp: Gửi email →</button></div>
+        <div class="footer-actions"><button class="btn" data-go="2"><svg class="i"><use href="#i-back"/></svg>Dữ liệu</button><button class="btn primary big" data-go="4">Tiếp tục: Gửi email<svg class="i"><use href="#i-arrow"/></svg></button></div>
       </div>
     </section>
 
     <!-- BƯỚC 4 -->
     <section class="page" id="p4">
-      <h2>Bước 4 — Gửi email</h2>
-      <p class="lead">Luôn gửi thử vào hộp thư của bạn trước. Gmail miễn phí gửi được khoảng 500 người/ngày.</p>
+      <div class="phead">
+        <div class="picon"><svg viewBox="0 0 24 24"><use href="#i-send"/></svg></div>
+        <div><h2>Bước 4: Gửi email</h2><p class="lead">Luôn gửi thử vào hộp thư của bạn trước. Gmail miễn phí gửi được khoảng 500 người/ngày.</p></div>
+      </div>
       <div id="p4Need" class="note warn hidden"></div>
       <div class="grid">
         <div class="card">
-          <h3>Gửi thử</h3><p class="sub">Gửi phiếu của một người vào địa chỉ bạn chọn, tiêu đề có chữ [GỬI THỬ].</p>
+          <div class="bhead"><div class="bicon orange"><svg class="i"><use href="#i-eye"/></svg></div><div><h3>Gửi thử</h3><p class="sub">Gửi phiếu của một người đến địa chỉ bạn chọn, tiêu đề có chữ [GỬI THỬ].</p></div></div>
           <label class="field"><span>Phiếu của</span><select id="testEmp"></select></label>
           <label class="field"><span>Gửi đến</span><input type="email" id="testTo" placeholder="email của bạn"></label>
-          <button class="btn" id="btnTest">Gửi thử</button>
+          <button class="btn" id="btnTest"><svg class="i"><use href="#i-send"/></svg>Gửi thử</button>
         </div>
         <div class="card">
-          <h3>Gửi hàng loạt</h3>
-          <p class="sub" id="sendSummary">—</p>
+          <div class="bhead"><div class="bicon"><svg class="i"><use href="#i-send"/></svg></div><div><h3>Gửi hàng loạt</h3><p class="sub" id="sendSummary">—</p></div></div>
           <label class="field" style="max-width:220px"><span>Nghỉ giữa 2 email (giây)</span><input type="number" min="1" max="60" data-k="mail.delay"></label>
           <div class="row">
-            <button class="btn primary big" id="btnStart">Bắt đầu gửi</button>
+            <button class="btn primary big" id="btnStart"><svg class="i"><use href="#i-send"/></svg>Bắt đầu gửi</button>
             <button class="btn hidden" id="btnPause">Tạm dừng</button>
             <button class="btn danger hidden" id="btnStop">Dừng hẳn</button>
           </div>
           <div class="bar"><i id="barFill"></i></div>
-          <div id="progText" style="font-size:14px;color:var(--muted)">Chưa bắt đầu.</div>
+          <div id="progText" style="font-size:13.5px;color:var(--muted)">Chưa bắt đầu.</div>
         </div>
       </div>
-      <div class="card" style="margin-top:16px">
+      <div class="card" style="margin-top:18px">
         <div class="row" style="margin-bottom:10px"><h3 class="grow" style="margin:0">Nhật ký gửi</h3>
-          <button class="btn small" id="btnReport">Tải báo cáo (.xlsx)</button>
+          <button class="btn small" id="btnReport"><svg class="i"><use href="#i-save"/></svg>Tải báo cáo (.xlsx)</button>
           <button class="btn small ghost" id="btnClearLog">Xóa lịch sử kỳ này</button>
         </div>
-        <p class="sub" style="margin:-4px 0 10px">Đổi máy hoặc lỡ xóa dữ liệu trình duyệt? Vào tab <a href="#" data-go="5">Lịch sử</a> để nạp lại báo cáo cũ trước khi gửi, tránh gửi trùng.</p>
+        <p class="sub" style="margin:0 0 10px">Đổi máy hoặc lỡ xóa dữ liệu trình duyệt? Vào <a href="#" data-go="5">Lịch sử</a> để nạp lại báo cáo cũ trước khi gửi, tránh gửi trùng.</p>
         <div class="log" id="log"><div><span class="t">—</span><span>Chưa có hoạt động.</span></div></div>
       </div>
     </section>
 
     <!-- LỊCH SỬ -->
     <section class="page" id="p5">
-      <h2>Lịch sử gửi các kỳ</h2>
-      <p class="lead">Ai đã nhận phiếu lương, vào lúc nào. Lịch sử lưu trên trình duyệt này và không chứa số tiền.</p>
-      <div class="card" style="margin-bottom:16px">
-        <h3>Sao lưu và khôi phục</h3>
-        <p class="sub">Đổi máy hoặc lỡ xóa dữ liệu trình duyệt? Nạp lại các file báo cáo đã tải về ở Bước 4 hoặc file "toàn bộ lịch sử". Có thể chọn nhiều file cùng lúc.</p>
+      <div class="phead">
+        <div class="picon"><svg viewBox="0 0 24 24"><use href="#i-clock"/></svg></div>
+        <div><h2>Lịch sử gửi các kỳ</h2><p class="lead">Ai đã nhận phiếu lương, vào lúc nào. Lịch sử lưu trên trình duyệt này và không chứa số tiền.</p></div>
+      </div>
+      <div class="card" style="margin-bottom:18px">
+        <div class="bhead"><div class="bicon violet"><svg class="i"><use href="#i-save"/></svg></div><div><h3>Sao lưu và khôi phục</h3><p class="sub">Đổi máy hoặc lỡ xóa dữ liệu trình duyệt? Nạp lại các file báo cáo đã tải ở Bước 4 hoặc file "toàn bộ lịch sử". Chọn được nhiều file cùng lúc.</p></div></div>
         <div class="row">
-          <label class="btn primary">Nạp báo cáo cũ (.xlsx)<input type="file" id="histFile" accept=".xlsx,.xls" multiple hidden></label>
-          <button class="btn" id="btnHistExport">Tải toàn bộ lịch sử (.xlsx)</button>
+          <label class="btn primary"><svg class="i"><use href="#i-upload"/></svg>Nạp báo cáo cũ (.xlsx)<input type="file" id="histFile" accept=".xlsx,.xls" multiple hidden></label>
+          <button class="btn" id="btnHistExport"><svg class="i"><use href="#i-save"/></svg>Tải toàn bộ lịch sử (.xlsx)</button>
         </div>
         <div id="histMsg" style="margin-top:12px"></div>
       </div>
@@ -400,38 +613,37 @@ details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 
 
     <!-- HƯỚNG DẪN -->
     <section class="page guide" id="pguide">
-      <h2>Hướng dẫn cài đặt (làm 1 lần, khoảng 30 phút)</h2>
-      <p class="lead">Tất cả miễn phí. Nên dùng một tài khoản Gmail riêng để gửi lương.</p>
+      <div class="phead">
+        <div class="picon"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></div>
+        <div><h2>Hướng dẫn cài đặt</h2><p class="lead">Làm một lần, khoảng 20 phút, tất cả miễn phí. Nên dùng một tài khoản Gmail riêng để gửi lương.</p></div>
+      </div>
       <div class="grid">
         <div class="card">
-          <h3>A. Đưa trang web lên GitHub Pages</h3>
+          <h3>A. Trang web</h3>
           <ol>
-            <li>Vào <a href="https://github.com" target="_blank" rel="noopener">github.com</a>, tạo tài khoản miễn phí.</li>
-            <li>Bấm <b>+</b> → <b>New repository</b>. Đặt tên <code>phieu-luong</code>, chọn <b>Public</b>, bấm <b>Create repository</b>.</li>
-            <li>Bấm <b>uploading an existing file</b>, kéo file <code>index.html</code> vào, bấm <b>Commit changes</b>.</li>
-            <li>Vào <b>Settings</b> → <b>Pages</b>. Ở mục <i>Branch</i> chọn <b>main</b> và <b>/(root)</b> → <b>Save</b>.</li>
-            <li>Chờ 1–2 phút, trang sẽ có địa chỉ <code>https://tên-github.github.io/phieu-luong/</code>.</li>
+            <li>Trang đang chạy tại <code>https://phieuluong-nk.onrender.com</code> (Render, miễn phí).</li>
+            <li>Mã nguồn nằm trong kho GitHub <code>Phieuluong</code>. Mỗi lần kho được cập nhật, Render tự đưa bản mới lên sau khoảng 20 giây.</li>
+            <li>Thư mục <code>lib/</code> chứa sẵn các thư viện, trang không phụ thuộc CDN bên ngoài.</li>
           </ol>
-          <p class="sub">Trang công khai nhưng không chứa dữ liệu lương nào. File Excel chỉ được đọc trên máy người dùng.</p>
+          <p class="sub">Trang công khai nhưng không chứa dữ liệu lương. File Excel chỉ được đọc trên máy người dùng.</p>
         </div>
         <div class="card">
           <h3>B. Tạo Google Client ID</h3>
           <ol>
             <li>Vào <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> bằng <b>Gmail dùng để gửi lương</b>. Tạo dự án mới tên <code>Phieu luong</code>.</li>
-            <li>Tìm <b>Gmail API</b> ở ô tìm kiếm → bấm <b>Enable</b> (Bật).</li>
-            <li>Vào <b>Google Auth Platform</b> (hoặc <i>OAuth consent screen</i>) → <b>Get started</b>: điền tên ứng dụng, email hỗ trợ, chọn <b>External</b>.</li>
-            <li>Mục <b>Audience</b> → <b>Test users</b> → thêm chính Gmail gửi lương.</li>
-            <li>Mục <b>Clients</b> → <b>Create client</b> → loại <b>Web application</b>. Ở <b>Authorized JavaScript origins</b> dán địa chỉ <code>https://tên-github.github.io</code> (không có đuôi /phieu-luong).</li>
-            <li>Bấm <b>Create</b>, chép <b>Client ID</b> (đuôi <code>.apps.googleusercontent.com</code>) dán vào Bước 1.</li>
+            <li>Tìm <b>Gmail API</b> → bấm <b>Enable</b> (Bật).</li>
+            <li>Vào <b>Google Auth Platform</b> → <b>Get started</b>: điền tên ứng dụng, email hỗ trợ, chọn <b>External</b>.</li>
+            <li><b>Audience</b> → <b>Test users</b> → thêm chính Gmail gửi lương.</li>
+            <li><b>Clients</b> → <b>Create client</b> → loại <b>Web application</b>. Ở <b>Authorized JavaScript origins</b> dán địa chỉ ở tab <a href="#" data-tabgo="google">Kết nối Gmail</a> (không có dấu / ở cuối).</li>
+            <li>Bấm <b>Create</b>, chép <b>Client ID</b> dán vào tab <a href="#" data-tabgo="google">Kết nối Gmail</a>.</li>
           </ol>
-          <p class="sub">Giao diện Google Cloud thỉnh thoảng đổi tên menu; nếu không thấy đúng tên, tìm mục có ý nghĩa tương tự.</p>
         </div>
         <div class="card">
           <h3>C. Lần đăng nhập đầu tiên</h3>
           <ol>
-            <li>Mở trang GitHub Pages, bấm <b>Đăng nhập Google</b>.</li>
-            <li>Google báo <i>"Google chưa xác minh ứng dụng này"</i> → bấm <b>Tiếp tục</b>. Đây là bình thường với ứng dụng nội bộ.</li>
-            <li><b>Nhớ tick ô cho phép "Gửi email thay mặt bạn"</b>, nếu không sẽ không gửi được.</li>
+            <li>Bấm <b>Đăng nhập Google</b> ở góc trên.</li>
+            <li>Google báo <i>"chưa xác minh ứng dụng"</i> → bấm <b>Tiếp tục</b>.</li>
+            <li><b>Tick ô "Gửi email thay mặt bạn"</b>, nếu không sẽ không gửi được.</li>
           </ol>
           <h3>D. Mỗi tháng</h3>
           <ol>
@@ -440,15 +652,38 @@ details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 
             <li>Bước 3: xem lỗi, mở vài phiếu kiểm tra.</li>
             <li>Bước 4: gửi thử → gửi hàng loạt → tải báo cáo lưu lại.</li>
           </ol>
-          <p class="sub">Trong lúc gửi, giữ tab mở. Nếu bị gián đoạn, mở lại và bấm gửi tiếp: người đã nhận sẽ tự được bỏ qua (trên cùng trình duyệt).</p>
         </div>
       </div>
     </section>
+    </div>
+
+    <aside class="aside">
+      <div class="quick">
+        <h3><span class="ico"><svg class="i"><use href="#i-bulb"/></svg></span>Hướng dẫn nhanh</h3>
+        <p>Các bước gửi phiếu lương</p>
+        <ol class="qsteps">
+          <li data-go="1"><span class="n">1</span><div><b>Thiết lập thông tin</b><span>Tên đơn vị, kỳ lương, mẫu email.</span></div></li>
+          <li data-go="2"><span class="n">2</span><div><b>Tải file Excel</b><span>Chọn bảng lương, kiểm tra ghép cột.</span></div></li>
+          <li data-go="3"><span class="n">3</span><div><b>Kiểm tra phiếu lương</b><span>Xem trước từng phiếu, xử lý lỗi.</span></div></li>
+          <li data-go="4"><span class="n">4</span><div><b>Gửi email</b><span>Gửi thử, rồi gửi hàng loạt qua Gmail.</span></div></li>
+        </ol>
+      </div>
+      <div class="secure">
+        <h3><svg class="i"><use href="#i-lock"/></svg>Bảo mật dữ liệu</h3>
+        <ul>
+          <li>File lương xử lý ngay trên trình duyệt của bạn</li>
+          <li>Không lưu dữ liệu lương lên máy chủ</li>
+          <li>Email gửi trực tiếp từ Gmail của bạn</li>
+          <li>PDF có mật khẩu riêng cho từng người</li>
+        </ul>
+      </div>
+    </aside>
+    </div>
   </main>
 </div>
 
 <div class="modal" id="modal">
-  <div class="box">
+  <div class="box2">
     <div class="head"><b id="mTitle">Phiếu lương</b>
       <a class="btn small" id="mOpen" target="_blank" rel="noopener">Mở tab mới</a>
       <a class="btn small" id="mDown" download>Tải về</a>
@@ -542,8 +777,10 @@ function go(step) {
   if (!$('#p' + step)) return;
   $$('section.page').forEach(s => s.classList.remove('show'));
   $('#p' + step).classList.add('show');
+  document.body.dataset.step = step;
   $$('.step').forEach(b => b.classList.toggle('active', b.dataset.go === String(step)));
-  $('.step.active')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  $$('.navlink').forEach(b => b.classList.toggle('active', b.dataset.go === String(step)));
+  const sa = $('.step.active'); if (sa) $('#steps').scrollTo({ left: sa.offsetLeft - 20, behavior: 'smooth' });
   markDone();
   if (step === 3) renderTable();
   if (step === 4) renderSend();
@@ -563,19 +800,46 @@ function bindSettings() {
   $$('[data-k]').forEach(el => {
     const k = el.dataset.k, v = getK(k);
     if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+    if (el._bound) return; el._bound = true;
     el.addEventListener('input', () => {
       let val = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Math.max(1, +el.value || 1) : el.value;
       setK(k, val); saveSettings();
-      if (k.startsWith('org.')) { $('#orgSmall').textContent = S.org.name || 'Phiếu lương PDF qua Gmail'; }
-      if (k === 'org.period') { refreshStatus(); }
-      if (k === 'google.clientId') { resetGoogle(); markDone(); }
+      if (k === 'org.name') { $('#orgSmall').textContent = S.org.name || 'Gửi phiếu lương PDF qua Gmail'; markDone(); }
+      if (k === 'google.clientId') { resetGoogle(); markDone(); refreshG(); }
       if (k === 'mail.protect' && ST.map) rebuild();
     });
   });
-  $('#orgSmall').textContent = S.org.name || 'Phiếu lương PDF qua Gmail';
-  renderLogo();
+  $('#orgSmall').textContent = S.org.name || 'Gửi phiếu lương PDF qua Gmail';
+  fillPeriod(); renderLogo();
 }
-function renderLogo() { $('#logoPrev').innerHTML = S.org.logo ? `<img src="${S.org.logo}" alt="Logo">` : 'Chưa có logo'; }
+function fillPeriod() {
+  const m = /(\d{1,2})\s*\/\s*(\d{4})/.exec(S.org.period || ''), now = new Date(), y0 = now.getFullYear();
+  const mm = m && +m[1] >= 1 && +m[1] <= 12 ? +m[1] : now.getMonth() + 1, yy = m ? +m[2] : y0;
+  const years = []; for (let y = Math.min(yy, y0 - 2); y <= Math.max(yy, y0 + 1); y++) years.push(y);
+  $('#selMonth').innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">Tháng ${i + 1}</option>`).join('');
+  $('#selYear').innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  $('#selMonth').value = mm; $('#selYear').value = yy;
+  const p = `THÁNG ${pad2(mm)}/${yy}`; if (S.org.period !== p) { S.org.period = p; saveSettings(); }
+}
+['#selMonth', '#selYear'].forEach(id => $(id).addEventListener('change', () => {
+  S.org.period = `THÁNG ${pad2(+$('#selMonth').value)}/${$('#selYear').value}`; saveSettings(); refreshStatus();
+  toast('Kỳ lương: ' + S.org.period);
+}));
+function showTab(name) {
+  $$('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+  $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === name));
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab]'); if (t) showTab(t.dataset.tab);
+  const tg = e.target.closest('[data-tabgo]'); if (tg) { e.preventDefault(); go(1); showTab(tg.dataset.tabgo); }
+});
+$('#vars').addEventListener('click', e => {
+  const c = e.target.closest('code'); if (!c) return;
+  const ta = $('#fBody'), a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+  ta.value = ta.value.slice(0, a) + c.textContent + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + c.textContent.length;
+  ta.dispatchEvent(new Event('input'));
+});
+function renderLogo() { $('#logoPrev').innerHTML = S.org.logo ? `<img src="${S.org.logo}" alt="Logo">` : '<svg class="i"><use href="#i-image"/></svg>'; }
 $('#logoFile').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
@@ -956,13 +1220,14 @@ const G = { client: null, token: null, exp: 0, email: '', pending: null };
 function resetGoogle() { G.client = null; }
 function refreshG() {
   const on = !!G.token && Date.now() < G.exp;
+  $('#btnLogin').classList.toggle('hidden', on);
+  $('#gUser').classList.toggle('hidden', !on);
   $('#gDot').classList.toggle('on', on);
-  $('#gText').textContent = on ? G.email || 'Đã đăng nhập' : (G.email ? 'Phiên đăng nhập đã hết hạn' : 'Chưa đăng nhập Google');
-  $('#btnLogin').textContent = on ? 'Đăng nhập lại' : 'Đăng nhập Google';
-  $('#btnLogin').classList.toggle('primary', !on);
-  $('#btnLogout').classList.toggle('hidden', !on);
+  $('#gEmail').textContent = G.email || 'Đã đăng nhập';
+  $('#gTitle').textContent = G.email && !on ? 'Đăng nhập lại' : 'Đăng nhập Google';
+  $('#gText').textContent = G.email && !on ? 'Phiên đăng nhập đã hết hạn' : 'Kết nối để gửi email';
   if (!$('#testTo').value && G.email) $('#testTo').value = G.email;
-  $('#gNote').innerHTML = on ? `✅ Đã kết nối Gmail <b>${esc(G.email)}</b>.` : 'Sau khi lưu Client ID, bấm <b>Đăng nhập Google</b> ở góc trên.';
+  $('#gNote').innerHTML = on ? `✅ Đã kết nối Gmail <b>${esc(G.email)}</b>.` : (S.google.clientId ? 'Đã có Client ID. Bấm <b>Đăng nhập Google</b> ở góc trên.' : 'Chưa có Client ID. Dán Client ID ở ô bên trái trước.');
   $('#gNote').className = 'note ' + (on ? 'ok' : 'info');
   if ($('#p4').classList.contains('show')) renderSend();
 }
@@ -970,7 +1235,7 @@ function login() {
   return new Promise((resolve, reject) => {
     const cid = (S.google.clientId || '').trim();
     if (location.protocol === 'file:') { toast('Cần mở trang qua GitHub Pages mới đăng nhập được.'); return reject(new Error('file')); }
-    if (!cid) { toast('Hãy dán Google Client ID ở Bước 1 trước.'); go(1); return reject(new Error('noid')); }
+    if (!cid) { toast('Hãy dán Google Client ID ở tab Kết nối Gmail trước.'); go(1); showTab('google'); return reject(new Error('noid')); }
     if (!window.google?.accounts?.oauth2) { toast('Chưa tải được thư viện đăng nhập Google. Kiểm tra mạng rồi tải lại trang.'); return reject(new Error('gis')); }
     if (!G.client || G.client._cid !== cid) {
       G.client = google.accounts.oauth2.initTokenClient({ client_id: cid, scope: SCOPE_SEND + ' openid email',
