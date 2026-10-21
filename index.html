@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gửi phiếu lương</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/build/pdfmake.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/build/vfs_fonts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --surface-2:#f7f9fc; --line:#dde3ea; --line-strong:#c5cfdb;
+  --text:#18212d; --muted:#5d6b7c; --accent:#1f4e79; --accent-2:#2c6aa3; --accent-soft:#e7eff8;
+  --ok:#1e7a46; --ok-soft:#e3f4ea; --warn:#9a6200; --warn-soft:#fff4dc; --err:#b42318; --err-soft:#fde8e6;
+  --hl:#fff176; --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141b; --surface:#171e27; --surface-2:#1c2530; --line:#2a3542; --line-strong:#3a4757;
+    --text:#e6ebf1; --muted:#9aa8b8; --accent:#7fb2e5; --accent-2:#9cc5ef; --accent-soft:#1d2d40;
+    --ok:#5fd08f; --ok-soft:#163223; --warn:#f0b54a; --warn-soft:#33270f; --err:#ff8a7e; --err-soft:#3a1916;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --surface:#171e27; --surface-2:#1c2530; --line:#2a3542; --line-strong:#3a4757;
+  --text:#e6ebf1; --muted:#9aa8b8; --accent:#7fb2e5; --accent-2:#9cc5ef; --accent-soft:#1d2d40;
+  --ok:#5fd08f; --ok-soft:#163223; --warn:#f0b54a; --warn-soft:#33270f; --err:#ff8a7e; --err-soft:#3a1916;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent-2)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+/* top bar */
+.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top .wrap{display:flex;align-items:center;gap:12px;min-height:60px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto}
+.brand svg{flex:none}
+.brand small{display:block;font-weight:400;font-size:12px;color:var(--muted);line-height:1.2}
+.gchip{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line-strong);flex:none}
+.dot.on{background:var(--ok)}
+/* steps */
+.steps{display:flex;gap:6px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
+.steps::-webkit-scrollbar{display:none}
+.step{flex:none;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px 7px 8px;cursor:pointer;font-weight:500;font-size:14px;color:var(--muted)}
+.step b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--muted)}
+.step.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.step.active b{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step.done b{background:var(--ok);border-color:var(--ok);color:#fff}
+/* layout */
+main{padding:12px 0 60px}
+section.page{display:none}
+section.page.show{display:block}
+h2{font-size:21px;margin:10px 0 2px}
+.lead{color:var(--muted);margin:0 0 16px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);min-width:0}
+.card h3{font-size:15px;margin:0 0 4px}
+.card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.field{display:block;margin-bottom:12px}
+.field>span{display:block;font-size:13px;font-weight:500;margin-bottom:4px}
+.field>em{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:4px}
+input[type=text],input[type=email],input[type=number],select,textarea{width:100%;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:38px}
+textarea{min-height:170px;resize:vertical;line-height:1.45}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-2);outline-offset:-1px;border-color:transparent}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>.grow{flex:1 1 160px;min-width:0}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:4px 0 12px;cursor:pointer}
+.check input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 14px;min-height:38px;cursor:pointer;font-weight:500;font-size:14px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+:root[data-theme="dark"] .btn.primary{color:#0f141b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0f141b}}
+.btn.danger{color:var(--err);border-color:var(--err)}
+.btn.small{min-height:30px;padding:4px 10px;font-size:13px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.big{min-height:46px;padding:10px 22px;font-size:15px}
+.note{border-radius:10px;padding:10px 14px;font-size:14px;margin:0 0 14px;border:1px solid}
+.note.info{background:var(--accent-soft);border-color:transparent}
+.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--text)}
+.note.err{background:var(--err-soft);border-color:transparent}
+.note.ok{background:var(--ok-soft);border-color:transparent}
+.hidden{display:none!important}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+code{background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;word-break:break-all}
+.logo-box{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.logo-prev{width:64px;height:64px;border:1px dashed var(--line-strong);border-radius:10px;display:grid;place-items:center;overflow:hidden;background:var(--surface-2);flex:none;font-size:11px;color:var(--muted);text-align:center}
+.logo-prev img{max-width:100%;max-height:100%}
+/* drop zone */
+.drop{display:block;border:2px dashed var(--line-strong);border-radius:var(--radius);padding:30px 16px;text-align:center;background:var(--surface);cursor:pointer;transition:.15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{display:block;font-size:16px;margin-bottom:4px}
+.drop span{color:var(--muted);font-size:13px}
+/* mapping */
+.maplist{display:flex;flex-direction:column;gap:8px}
+.mapitem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto;gap:6px;align-items:center}
+.mapitem input,.mapitem select{min-height:34px;padding:5px 8px;font-size:14px}
+.maphead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 34px;gap:6px;font-size:12px;color:var(--muted);margin-bottom:2px}
+.icon-btn{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{color:var(--err);border-color:var(--err)}
+.kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;align-items:center;margin-bottom:8px}
+.kv>label{font-size:13px;font-weight:500}
+@media (max-width:520px){.kv{grid-template-columns:1fr;gap:3px}}
+/* table */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .chip.on{color:#0f141b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip.on{color:#0f141b}}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table.list{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
+table.list th,table.list td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.list th{font-size:12px;font-weight:600;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+table.list tr:last-child td{border-bottom:0}
+table.list td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.list tr.off td{opacity:.55}
+.badge{display:inline-block;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:500;margin:1px 4px 1px 0}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.err{background:var(--err-soft);color:var(--err)}
+.badge.sent{background:var(--accent-soft);color:var(--accent)}
+.reason{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:110px}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+/* progress */
+.bar{height:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.log{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:13px}
+.log div{padding:6px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+.log div:last-child{border-bottom:0}
+.log .t{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.log .e{color:var(--err)}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,15,22,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.show{display:flex}
+.modal .box{background:var(--surface);border-radius:var(--radius);width:min(900px,100%);height:min(92vh,1100px);display:flex;flex-direction:column;overflow:hidden}
+.modal .head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.modal .head b{margin-right:auto}
+.modal iframe{flex:1;border:0;width:100%;background:#525659}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#1d2733;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:60;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+/* guide */
+.guide ol{padding-left:22px;margin:6px 0 12px}
+.guide li{margin-bottom:7px}
+.guide h3{margin-top:4px}
+.kbd{display:inline-block;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:13px;background:var(--surface-2)}
+.footer-actions{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
+details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#1f4e79"/><path d="M8 11.5h18v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 8 23.5z" fill="#fff"/><path d="M8 12l9 6.5 9-6.5" fill="none" stroke="#1f4e79" stroke-width="1.8" stroke-linejoin="round"/><circle cx="25" cy="24" r="5" fill="#ffd54a"/><path d="M23 24.2l1.4 1.4 2.6-2.8" fill="none" stroke="#1f4e79" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>Gửi phiếu lương<small id="orgSmall">Phiếu lương PDF qua Gmail</small></div>
+    </div>
+    <div class="gchip">
+      <span class="dot" id="gDot"></span><span id="gText">Chưa đăng nhập Google</span>
+      <button class="btn small primary" id="btnLogin">Đăng nhập Google</button>
+      <button class="btn small ghost hidden" id="btnLogout">Thoát</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="steps" id="steps">
+    <button class="step active" data-go="1"><b>1</b>Thiết lập</button>
+    <button class="step" data-go="2"><b>2</b>Dữ liệu Excel</button>
+    <button class="step" data-go="3"><b>3</b>Kiểm tra</button>
+    <button class="step" data-go="4"><b>4</b>Gửi email</button>
+    <button class="step" data-go="guide"><b>?</b>Hướng dẫn cài đặt</button>
+  </nav>
+
+  <main>
+    <div class="note warn hidden" id="fileWarn">Bạn đang mở trang trực tiếp từ máy tính. Vẫn xem thử được, nhưng <b>muốn gửi email phải đưa trang lên GitHub Pages</b>. Xem mục <a href="#" data-go="guide">Hướng dẫn cài đặt</a>.</div>
+    <div class="note err hidden" id="libWarn"></div>
+
+    <!-- BƯỚC 1 -->
+    <section class="page show" id="p1">
+      <h2>Bước 1 — Thiết lập</h2>
+      <p class="lead">Chỉ cần làm một lần. Mọi thiết lập được lưu trên trình duyệt này. Mỗi tháng chỉ cần đổi <b>Kỳ lương</b>.</p>
+      <div class="grid">
+        <div class="card">
+          <h3>Thông tin đơn vị trên phiếu</h3>
+          <p class="sub">Phần đầu của phiếu lương PDF.</p>
+          <div class="logo-box">
+            <div class="logo-prev" id="logoPrev">Chưa có logo</div>
+            <div class="row">
+              <label class="btn small">Chọn logo<input type="file" id="logoFile" accept="image/png,image/jpeg" hidden></label>
+              <button class="btn small ghost" id="logoClear">Bỏ logo</button>
+            </div>
+          </div>
+          <label class="field"><span>Tên đơn vị</span><input type="text" data-k="org.name"></label>
+          <label class="field"><span>Dòng phụ (phòng ban, điện thoại)</span><input type="text" data-k="org.sub"></label>
+          <div class="row">
+            <label class="field grow"><span>Tiêu đề phiếu</span><input type="text" data-k="org.title"></label>
+            <label class="field grow"><span>Kỳ lương</span><input type="text" data-k="org.period"></label>
+          </div>
+          <label class="field"><span>Ghi chú dưới tiêu đề</span><input type="text" data-k="org.note" placeholder="Ví dụ: ( Bảng nháp )"></label>
+          <div class="row">
+            <label class="field grow"><span>Nhãn dòng cuối</span><input type="text" data-k="org.netLabel"></label>
+          </div>
+          <label class="field"><span>Ghi chú cuối phiếu</span><input type="text" data-k="org.footer"></label>
+          <button class="btn" id="btnSample">Xem phiếu mẫu</button>
+        </div>
+
+        <div class="card">
+          <h3>Nội dung email</h3>
+          <p class="sub">Biến tự thay: <code>{ho_ten}</code> <code>{ky_luong}</code> <code>{don_vi}</code> <code>{nguoi_gui}</code> <code>{goi_y_mat_khau}</code> <code>{con_lai}</code></p>
+          <label class="field"><span>Tên người gửi</span><input type="text" data-k="mail.senderName"></label>
+          <label class="field"><span>Tiêu đề email</span><input type="text" data-k="mail.subject"></label>
+          <label class="field"><span>Nội dung email</span><textarea data-k="mail.body"></textarea></label>
+          <label class="check"><input type="checkbox" data-k="mail.protect"><span>Đặt mật khẩu cho file PDF <span class="reason">Nên bật, vì phiếu có số CCCD và số tài khoản.</span></span></label>
+          <label class="field"><span>Gợi ý mật khẩu (ghi trong email)</span><input type="text" data-k="mail.hint"></label>
+        </div>
+
+        <div class="card">
+          <h3>Kết nối Google</h3>
+          <p class="sub">Dán Client ID tạo trong Google Cloud. Cách tạo xem ở <a href="#" data-go="guide">Hướng dẫn cài đặt</a>.</p>
+          <label class="field"><span>Google Client ID</span><input type="text" data-k="google.clientId" placeholder="xxxxxxxx.apps.googleusercontent.com" class="mono"><em>Không phải mật khẩu, lưu ở đây là an toàn.</em></label>
+          <div class="field"><span>Địa chỉ trang này (dán vào ô "Authorized JavaScript origins")</span>
+            <div class="row"><code id="originText" class="grow"></code><button class="btn small" id="btnCopyOrigin">Sao chép</button></div>
+          </div>
+          <div class="note info" id="gNote">Sau khi lưu Client ID, bấm <b>Đăng nhập Google</b> ở góc trên.</div>
+          <details class="adv"><summary>Sao lưu / khôi phục thiết lập</summary>
+            <p class="sub" style="margin-top:8px">Dùng khi chuyển sang máy khác hoặc trình duyệt khác.</p>
+            <div class="row">
+              <button class="btn small" id="btnExportCfg">Tải file thiết lập</button>
+              <label class="btn small">Nạp file thiết lập<input type="file" id="cfgFile" accept=".json" hidden></label>
+              <button class="btn small danger" id="btnResetCfg">Khôi phục mặc định</button>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="footer-actions"><span></span><button class="btn primary big" data-go="2">Tiếp: Tải dữ liệu Excel →</button></div>
+    </section>
+
+    <!-- BƯỚC 2 -->
+    <section class="page" id="p2">
+      <h2>Bước 2 — Tải bảng lương Excel</h2>
+      <p class="lead">File được đọc ngay trên máy bạn, không tải lên máy chủ nào.</p>
+      <label class="drop" id="drop">
+        <input type="file" id="xlsFile" accept=".xlsx,.xls,.xlsm,.csv" hidden>
+        <strong id="dropTitle">Kéo thả file Excel vào đây hoặc bấm để chọn</strong>
+        <span id="dropSub">.xlsx, .xls — mỗi người một dòng</span>
+      </label>
+      <p style="margin:10px 0 0;font-size:13px;color:var(--muted)">Chưa có file đúng dạng? <a href="#" id="btnTemplate">Tải file Excel mẫu</a></p>
+
+      <div id="mapWrap" class="hidden" style="margin-top:18px">
+        <div class="card" style="margin-bottom:16px">
+          <div class="row">
+            <label class="field grow" style="margin:0"><span>Trang tính (sheet)</span><select id="selSheet"></select></label>
+            <label class="field" style="margin:0;width:150px"><span>Dòng tiêu đề cột</span><input type="number" id="inpHeader" min="1"></label>
+          </div>
+          <p class="sub" style="margin:10px 0 0" id="sheetInfo"></p>
+        </div>
+        <h3 style="margin:0 0 4px">Ghép cột Excel vào phiếu lương</h3>
+        <p class="lead" style="margin-bottom:12px">Chương trình đã tự đoán. Kiểm tra lại, sửa nếu sai. Lần sau sẽ tự nhớ.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Cột bắt buộc</h3><p class="sub">Dùng để gửi email và đặt mật khẩu.</p>
+            <div class="kv"><label>Họ và tên</label><select data-m="name"></select></div>
+            <div class="kv"><label>Email</label><select data-m="email"></select></div>
+            <div class="kv"><label>STT trên phiếu</label><select data-m="stt"></select></div>
+            <div class="kv"><label>Mật khẩu PDF lấy từ</label><select data-m="pass"></select></div>
+            <div class="kv"><label>Chỉ lấy</label><div class="row"><input type="number" min="0" max="20" data-m="passLast" style="width:80px"><span style="font-size:13px;color:var(--muted)">ký tự cuối (0 = lấy toàn bộ)</span></div></div>
+          </div>
+          <div class="card">
+            <h3>Thông tin cá nhân</h3><p class="sub">In ở phần đầu phiếu, theo thứ tự.</p>
+            <div class="maphead"><span>Nhãn trên phiếu</span><span>Cột Excel</span><span></span></div>
+            <div class="maplist" data-list="info"></div>
+            <button class="btn small" data-add="info" style="margin-top:8px">+ Thêm dòng</button>
+          </div>
+          <div class="card">
+            <h3>Thu nhập</h3><p class="sub">Cột trái của bảng.</p>
+            <div class="maphead"><span>Nhãn trên phiếu</span><span>Cột Excel</span><span></span></div>
+            <div class="maplist" data-list="inc"></div>
+            <button class="btn small" data-add="inc" style="margin-top:8px">+ Thêm dòng</button>
+          </div>
+          <div class="card">
+            <h3>Khấu trừ</h3><p class="sub">Cột phải của bảng.</p>
+            <div class="maphead"><span>Nhãn trên phiếu</span><span>Cột Excel</span><span></span></div>
+            <div class="maplist" data-list="ded"></div>
+            <button class="btn small" data-add="ded" style="margin-top:8px">+ Thêm dòng</button>
+          </div>
+          <div class="card">
+            <h3>Tổng cộng</h3><p class="sub">Nếu chọn cột Excel, chương trình sẽ đối chiếu với tổng tự tính và cảnh báo khi lệch.</p>
+            <div class="kv"><label>Tổng thu nhập</label><select data-m="incTotal"></select></div>
+            <div class="kv"><label>Tổng khấu trừ</label><select data-m="dedTotal"></select></div>
+            <div class="kv"><label>Còn lại</label><select data-m="net"></select></div>
+          </div>
+        </div>
+        <div class="footer-actions"><button class="btn" data-go="1">← Thiết lập</button><button class="btn primary big" data-go="3">Tiếp: Kiểm tra →</button></div>
+      </div>
+    </section>
+
+    <!-- BƯỚC 3 -->
+    <section class="page" id="p3">
+      <h2>Bước 3 — Kiểm tra từng người</h2>
+      <p class="lead">Bấm <b>Xem</b> để mở phiếu PDF. Người có lỗi sẽ không được gửi.</p>
+      <div id="p3Empty" class="note info">Chưa có dữ liệu. Hãy tải file Excel ở <a href="#" data-go="2">Bước 2</a>.</div>
+      <div id="p3Body" class="hidden">
+        <div class="stats" id="stats"></div>
+        <div class="toolbar">
+          <div class="chips" id="filters">
+            <button class="chip on" data-f="all">Tất cả</button>
+            <button class="chip" data-f="err">Có lỗi</button>
+            <button class="chip" data-f="warn">Cảnh báo</button>
+            <button class="chip" data-f="sent">Đã gửi</button>
+            <button class="chip" data-f="todo">Chưa gửi</button>
+          </div>
+          <input type="text" id="search" placeholder="Tìm tên hoặc email…" style="flex:1 1 180px;max-width:280px">
+          <button class="btn small" id="btnZip">Tải tất cả PDF (.zip)</button>
+        </div>
+        <div class="tablebox">
+          <table class="list">
+            <thead><tr><th style="width:36px"><input type="checkbox" id="chkAll" title="Chọn tất cả"></th><th>STT</th><th>Họ và tên</th><th>Email</th><th style="text-align:right">Còn lại</th><th>Tình trạng</th><th></th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="footer-actions"><button class="btn" data-go="2">← Dữ liệu</button><button class="btn primary big" data-go="4">Tiếp: Gửi email →</button></div>
+      </div>
+    </section>
+
+    <!-- BƯỚC 4 -->
+    <section class="page" id="p4">
+      <h2>Bước 4 — Gửi email</h2>
+      <p class="lead">Luôn gửi thử vào hộp thư của bạn trước. Gmail miễn phí gửi được khoảng 500 người/ngày.</p>
+      <div id="p4Need" class="note warn hidden"></div>
+      <div class="grid">
+        <div class="card">
+          <h3>Gửi thử</h3><p class="sub">Gửi phiếu của một người vào địa chỉ bạn chọn, tiêu đề có chữ [GỬI THỬ].</p>
+          <label class="field"><span>Phiếu của</span><select id="testEmp"></select></label>
+          <label class="field"><span>Gửi đến</span><input type="email" id="testTo" placeholder="email của bạn"></label>
+          <button class="btn" id="btnTest">Gửi thử</button>
+        </div>
+        <div class="card">
+          <h3>Gửi hàng loạt</h3>
+          <p class="sub" id="sendSummary">—</p>
+          <label class="field" style="max-width:220px"><span>Nghỉ giữa 2 email (giây)</span><input type="number" min="1" max="60" data-k="mail.delay"></label>
+          <div class="row">
+            <button class="btn primary big" id="btnStart">Bắt đầu gửi</button>
+            <button class="btn hidden" id="btnPause">Tạm dừng</button>
+            <button class="btn danger hidden" id="btnStop">Dừng hẳn</button>
+          </div>
+          <div class="bar"><i id="barFill"></i></div>
+          <div id="progText" style="font-size:14px;color:var(--muted)">Chưa bắt đầu.</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="row" style="margin-bottom:10px"><h3 class="grow" style="margin:0">Nhật ký gửi</h3>
+          <button class="btn small" id="btnReport">Tải báo cáo (.xlsx)</button>
+          <button class="btn small ghost" id="btnClearLog">Xóa lịch sử kỳ này</button>
+        </div>
+        <div class="log" id="log"><div><span class="t">—</span><span>Chưa có hoạt động.</span></div></div>
+      </div>
+    </section>
+
+    <!-- HƯỚNG DẪN -->
+    <section class="page guide" id="pguide">
+      <h2>Hướng dẫn cài đặt (làm 1 lần, khoảng 30 phút)</h2>
+      <p class="lead">Tất cả miễn phí. Nên dùng một tài khoản Gmail riêng để gửi lương.</p>
+      <div class="grid">
+        <div class="card">
+          <h3>A. Đưa trang web lên GitHub Pages</h3>
+          <ol>
+            <li>Vào <a href="https://github.com" target="_blank" rel="noopener">github.com</a>, tạo tài khoản miễn phí.</li>
+            <li>Bấm <b>+</b> → <b>New repository</b>. Đặt tên <code>phieu-luong</code>, chọn <b>Public</b>, bấm <b>Create repository</b>.</li>
+            <li>Bấm <b>uploading an existing file</b>, kéo file <code>index.html</code> vào, bấm <b>Commit changes</b>.</li>
+            <li>Vào <b>Settings</b> → <b>Pages</b>. Ở mục <i>Branch</i> chọn <b>main</b> và <b>/(root)</b> → <b>Save</b>.</li>
+            <li>Chờ 1–2 phút, trang sẽ có địa chỉ <code>https://tên-github.github.io/phieu-luong/</code>.</li>
+          </ol>
+          <p class="sub">Trang công khai nhưng không chứa dữ liệu lương nào. File Excel chỉ được đọc trên máy người dùng.</p>
+        </div>
+        <div class="card">
+          <h3>B. Tạo Google Client ID</h3>
+          <ol>
+            <li>Vào <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> bằng <b>Gmail dùng để gửi lương</b>. Tạo dự án mới tên <code>Phieu luong</code>.</li>
+            <li>Tìm <b>Gmail API</b> ở ô tìm kiếm → bấm <b>Enable</b> (Bật).</li>
+            <li>Vào <b>Google Auth Platform</b> (hoặc <i>OAuth consent screen</i>) → <b>Get started</b>: điền tên ứng dụng, email hỗ trợ, chọn <b>External</b>.</li>
+            <li>Mục <b>Audience</b> → <b>Test users</b> → thêm chính Gmail gửi lương.</li>
+            <li>Mục <b>Clients</b> → <b>Create client</b> → loại <b>Web application</b>. Ở <b>Authorized JavaScript origins</b> dán địa chỉ <code>https://tên-github.github.io</code> (không có đuôi /phieu-luong).</li>
+            <li>Bấm <b>Create</b>, chép <b>Client ID</b> (đuôi <code>.apps.googleusercontent.com</code>) dán vào Bước 1.</li>
+          </ol>
+          <p class="sub">Giao diện Google Cloud thỉnh thoảng đổi tên menu; nếu không thấy đúng tên, tìm mục có ý nghĩa tương tự.</p>
+        </div>
+        <div class="card">
+          <h3>C. Lần đăng nhập đầu tiên</h3>
+          <ol>
+            <li>Mở trang GitHub Pages, bấm <b>Đăng nhập Google</b>.</li>
+            <li>Google báo <i>"Google chưa xác minh ứng dụng này"</i> → bấm <b>Tiếp tục</b>. Đây là bình thường với ứng dụng nội bộ.</li>
+            <li><b>Nhớ tick ô cho phép "Gửi email thay mặt bạn"</b>, nếu không sẽ không gửi được.</li>
+          </ol>
+          <h3>D. Mỗi tháng</h3>
+          <ol>
+            <li>Bước 1: đổi <b>Kỳ lương</b>.</li>
+            <li>Bước 2: tải file Excel tháng mới (cột được nhớ từ lần trước).</li>
+            <li>Bước 3: xem lỗi, mở vài phiếu kiểm tra.</li>
+            <li>Bước 4: gửi thử → gửi hàng loạt → tải báo cáo lưu lại.</li>
+          </ol>
+          <p class="sub">Trong lúc gửi, giữ tab mở. Nếu bị gián đoạn, mở lại và bấm gửi tiếp: người đã nhận sẽ tự được bỏ qua (trên cùng trình duyệt).</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <div class="head"><b id="mTitle">Phiếu lương</b>
+      <a class="btn small" id="mOpen" target="_blank" rel="noopener">Mở tab mới</a>
+      <a class="btn small" id="mDown" download>Tải về</a>
+      <button class="btn small" id="mClose">Đóng</button>
+    </div>
+    <iframe id="mFrame" title="Xem phiếu lương"></iframe>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ========== tiện ích ========== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad2 = n => String(n).padStart(2, '0');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+function toast(msg, ms = 3200) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms); }
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const slug = s => norm(s).replace(/ /g, '_').slice(0, 40) || 'x';
+function fmtMoney(n) {
+  if (n === null || n === undefined || n === '' || Number.isNaN(n)) return '';
+  const r = Math.round(n), s = String(Math.abs(r)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (r < 0 ? '-' : '') + s;
+}
+const today = () => { const d = new Date(); return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`; };
+const timeNow = () => { const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; };
+
+/* ========== thiết lập ========== */
+const LS_SET = 'pl_settings_v1', LS_LOG = 'pl_log_v1';
+const d0 = new Date();
+const DEF = {
+  org: { name: 'TRƯỜNG THCS VÀ THPT NGUYỄN KHUYẾN', sub: 'P. KẾ TOÁN - ĐT: 028 38 426026', logo: '',
+         title: 'PHIẾU TÍNH LƯƠNG', period: `THÁNG ${pad2(d0.getMonth() + 1)}/${d0.getFullYear()}`, note: '',
+         netLabel: 'Còn lại', footer: 'Mọi thắc mắc về phiếu lương, vui lòng liên hệ Phòng Kế toán.' },
+  mail: { senderName: 'Phòng Kế toán', subject: 'Phiếu tính lương {ky_luong} - {ho_ten}',
+          body: 'Kính gửi Thầy/Cô {ho_ten},\n\nPhòng Kế toán {don_vi} gửi Thầy/Cô phiếu tính lương {ky_luong} trong file PDF đính kèm.\nMật khẩu mở file: {goi_y_mat_khau}.\n\nNếu có thắc mắc, Thầy/Cô vui lòng phản hồi email này.\n\nTrân trọng,\n{nguoi_gui}',
+          protect: true, hint: '6 số cuối số CCCD của Thầy/Cô', delay: 3 },
+  google: { clientId: '' },
+  map: null
+};
+const LAYOUT = {
+  name: ['họ và tên', 'họ tên', 'tên nhân viên', 'tên cán bộ', 'tên'],
+  email: ['email', 'mail', 'e mail', 'địa chỉ email', 'thư điện tử'],
+  stt: ['stt', 'tt', 'số thứ tự'],
+  pass: ['cccd', 'căn cước', 'số cccd', 'cmnd'],
+  incTotal: ['tổng thu nhập', 'tổng thu', 'cộng thu nhập', 'tổng cộng thu nhập'],
+  dedTotal: ['tổng khấu trừ', 'tổng trừ', 'cộng khấu trừ', 'tổng các khoản trừ'],
+  net: ['còn lại', 'thực lĩnh', 'thực nhận', 'còn lĩnh', 'số tiền còn lại'],
+  info: [
+    ['Họ và tên', ['họ và tên', 'họ tên', 'tên']],
+    ['Công tác', ['công tác', 'chức vụ', 'bộ phận', 'tổ', 'nhiệm vụ']],
+    ['Lương CB', ['lương cb', 'lương cơ bản', 'lcb', 'mức lương']],
+    ['Mã số thuế', ['mã số thuế', 'mst']],
+    ['CCCD', ['cccd', 'căn cước', 'cmnd']],
+    ['Số TK', ['số tk', 'số tài khoản', 'stk', 'tài khoản']],
+    ['Ngân hàng', ['ngân hàng', 'nh']],
+    ['Mail', ['email', 'mail']]
+  ],
+  inc: [
+    ['Lương', ['lương', 'tiền lương', 'lương tháng']],
+    ['Phụ cấp trách nhiệm - Thâm niên', ['pc trách nhiệm thâm niên', 'phụ cấp trách nhiệm', 'pc trách nhiệm', 'thâm niên', 'trách nhiệm']],
+    ['Phụ cấp ngoài giờ', ['pc ngoài giờ', 'phụ cấp ngoài giờ', 'ngoài giờ', 'làm thêm']],
+    ['Phụ cấp giảng dạy', ['pc giảng dạy', 'phụ cấp giảng dạy', 'giảng dạy', 'đứng lớp']],
+    ['Phụ cấp khác', ['pc khác', 'phụ cấp khác', 'khác']]
+  ],
+  ded: [
+    ['Đã nhận đợt 1', ['đã nhận đợt 1', 'đợt 1', 'đã nhận', 'tạm ứng đợt 1']],
+    ['BHXH-YT-CĐ-BHTN', ['bhxh yt cđ bhtn', 'bhxh', 'bảo hiểm', 'bhxh bhyt bhtn']],
+    ['Thuế TNCN', ['thuế tncn', 'tncn', 'thuế']],
+    ['Hoàn trả tạm ứng', ['hoàn trả tạm ứng', 'hoàn trả', 'hoàn ứng']]
+  ]
+};
+function merge(a, b) { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object') merge(a[k], b[k]); else if (b[k] !== undefined) a[k] = b[k]; } return a; }
+let S = merge(JSON.parse(JSON.stringify(DEF)), lsGet(LS_SET, {}));
+let saveT;
+function saveSettings() { clearTimeout(saveT); saveT = setTimeout(() => { if (!lsSet(LS_SET, S)) toast('Không lưu được thiết lập (bộ nhớ trình duyệt bị chặn hoặc đầy).'); }, 300); }
+const getK = k => k.split('.').reduce((o, p) => o?.[p], S);
+const setK = (k, v) => { const ps = k.split('.'); let o = S; ps.slice(0, -1).forEach(p => o = o[p]); o[ps.at(-1)] = v; };
+
+/* ========== trạng thái ========== */
+const ST = { wb: null, fileName: '', sheet: '', raw: [], txt: [], headerRow: 0, headers: [], rows: [], emps: [], include: {}, filter: 'all', q: '' };
+let LOG = lsGet(LS_LOG, {});
+const logKey = (e) => `${S.org.period}|${e.email.toLowerCase()}`;
+
+/* ========== điều hướng ========== */
+function go(step) {
+  if (!$('#p' + step)) return;
+  $$('section.page').forEach(s => s.classList.remove('show'));
+  $('#p' + step).classList.add('show');
+  $$('.step').forEach(b => b.classList.toggle('active', b.dataset.go === String(step)));
+  $('.step.active')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  markDone();
+  if (step === 3) renderTable();
+  if (step === 4) renderSend();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); go(isNaN(+g.dataset.go) ? g.dataset.go : +g.dataset.go); } });
+function markDone() {
+  const has = ST.emps.length > 0;
+  const allSent = has && ST.emps.filter(isSendable).length > 0 && ST.emps.filter(isSendable).every(e => LOG[logKey(e)]?.status === 'sent');
+  const done = { 1: !!(S.org.name && S.google.clientId), 2: has, 3: has, 4: allSent };
+  $$('.step').forEach(b => { const n = +b.dataset.go; b.classList.toggle('done', !!done[n] && !b.classList.contains('active')); });
+}
+
+/* ========== form thiết lập ========== */
+function bindSettings() {
+  $$('[data-k]').forEach(el => {
+    const k = el.dataset.k, v = getK(k);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+    el.addEventListener('input', () => {
+      let val = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Math.max(1, +el.value || 1) : el.value;
+      setK(k, val); saveSettings();
+      if (k.startsWith('org.')) { $('#orgSmall').textContent = S.org.name || 'Phiếu lương PDF qua Gmail'; }
+      if (k === 'org.period') { refreshStatus(); }
+      if (k === 'google.clientId') { resetGoogle(); markDone(); }
+      if (k === 'mail.protect' && ST.map) rebuild();
+    });
+  });
+  $('#orgSmall').textContent = S.org.name || 'Phiếu lương PDF qua Gmail';
+  renderLogo();
+}
+function renderLogo() { $('#logoPrev').innerHTML = S.org.logo ? `<img src="${S.org.logo}" alt="Logo">` : 'Chưa có logo'; }
+$('#logoFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { const img = new Image(); img.onload = () => {
+    const m = 320, sc = Math.min(1, m / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+    S.org.logo = c.toDataURL('image/jpeg', 0.9); saveSettings(); renderLogo(); toast('Đã lưu logo.');
+  }; img.src = rd.result; };
+  rd.readAsDataURL(f); e.target.value = '';
+});
+$('#logoClear').onclick = () => { S.org.logo = ''; saveSettings(); renderLogo(); };
+$('#originText').textContent = location.origin && location.origin !== 'null' ? location.origin : '(mở trang bằng GitHub Pages để có địa chỉ)';
+$('#btnCopyOrigin').onclick = () => { navigator.clipboard?.writeText($('#originText').textContent).then(() => toast('Đã sao chép.'), () => toast('Không sao chép được, hãy bôi đen và chép tay.')); };
+$('#btnExportCfg').onclick = () => { const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }); dl(blob, 'thiet_lap_phieu_luong.json'); };
+$('#cfgFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { S = merge(JSON.parse(JSON.stringify(DEF)), JSON.parse(await f.text())); lsSet(LS_SET, S); bindSettings(); if (ST.headers.length) { initMap(); } toast('Đã nạp thiết lập.'); }
+  catch (err) { toast('File thiết lập không hợp lệ.'); }
+  e.target.value = '';
+});
+$('#btnResetCfg').onclick = () => { if (!confirm('Khôi phục toàn bộ thiết lập về mặc định?')) return; S = JSON.parse(JSON.stringify(DEF)); lsSet(LS_SET, S); bindSettings(); if (ST.headers.length) initMap(); toast('Đã khôi phục mặc định.'); };
+function dl(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+
+/* ========== đọc Excel ========== */
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+$('#xlsFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+async function loadFile(f) {
+  try {
+    const buf = await f.arrayBuffer();
+    ST.wb = XLSX.read(buf, { type: 'array', cellDates: true });
+    ST.fileName = f.name;
+    $('#selSheet').innerHTML = ST.wb.SheetNames.map(n => `<option>${esc(n)}</option>`).join('');
+    // chọn sheet có nhiều dòng nhất có cột email
+    let best = ST.wb.SheetNames[0], bestScore = -1;
+    for (const n of ST.wb.SheetNames) { const a = XLSX.utils.sheet_to_json(ST.wb.Sheets[n], { header: 1, raw: false, defval: '' }); const sc = a.length + (detectHeader(a).score > 4 ? 1000 : 0); if (sc > bestScore) { bestScore = sc; best = n; } }
+    $('#selSheet').value = best;
+    loadSheet(best, true);
+    $('#dropTitle').textContent = '📄 ' + f.name;
+    $('#dropSub').textContent = 'Bấm để chọn file khác';
+    $('#mapWrap').classList.remove('hidden');
+  } catch (err) { console.error(err); toast('Không đọc được file Excel này.'); }
+}
+function detectHeader(txt) {
+  let best = { row: 0, score: -1 };
+  for (let r = 0; r < Math.min(25, txt.length); r++) {
+    const cells = txt[r].map(v => String(v).trim()).filter(Boolean);
+    const strCells = cells.filter(v => !/^[\d.,\s-]+$/.test(v));
+    let sc = strCells.length;
+    if (cells.some(v => /mail/i.test(norm(v)))) sc += 5;
+    if (cells.some(v => /^(ho va ten|ho ten)$/.test(norm(v)))) sc += 5;
+    if (strCells.length >= 3 && sc > best.score) best = { row: r, score: sc };
+  }
+  return best;
+}
+function loadSheet(name, auto) {
+  ST.sheet = name;
+  const ws = ST.wb.Sheets[name];
+  ST.raw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: true });
+  ST.txt = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '', blankrows: true });
+  if (auto) ST.headerRow = Math.max(0, detectHeader(ST.txt).row);
+  $('#inpHeader').value = ST.headerRow + 1;
+  buildHeaders();
+  initMap();
+}
+$('#selSheet').onchange = e => loadSheet(e.target.value, true);
+$('#inpHeader').onchange = e => { ST.headerRow = Math.max(0, (+e.target.value || 1) - 1); buildHeaders(); initMap(); };
+function buildHeaders() {
+  const h = ST.headerRow, width = Math.max(0, ...ST.txt.slice(0, h + 60).map(r => r.length));
+  const seen = {}; ST.headers = [];
+  for (let c = 0; c < width; c++) {
+    let t = String(ST.txt[h]?.[c] ?? '').replace(/\s+/g, ' ').trim();
+    if (!t && h > 0) t = String(ST.txt[h - 1]?.[c] ?? '').replace(/\s+/g, ' ').trim();
+    if (!t) { ST.headers.push(null); continue; }
+    seen[t] = (seen[t] || 0) + 1; if (seen[t] > 1) t = `${t} (${seen[t]})`;
+    ST.headers.push(t);
+  }
+  ST.colIndex = {}; ST.headers.forEach((t, i) => { if (t) ST.colIndex[t] = i; });
+}
+function colLabel(key) { const i = ST.colIndex[key]; return `${XLSX.utils.encode_col(i)} · ${key}`; }
+
+/* ========== ghép cột ========== */
+function score(header, syns) {
+  const h = norm(header); let best = 0;
+  for (const s of syns) { const n = norm(s); if (!n) continue;
+    if (h === n) best = Math.max(best, 100 + n.length);
+    else if (new RegExp('(^| )' + n.replace(/ /g, ' ') + '( |$)').test(h)) best = Math.max(best, 10 + n.length - h.length * 0.2);
+  }
+  return best;
+}
+function guess(syns, used) {
+  let best = '', bs = 0;
+  for (const t of ST.headers) { if (!t || used.has(t)) continue; const s = score(t, syns); if (s > bs) { bs = s; best = t; } }
+  if (best) used.add(best);
+  return best;
+}
+const defSyn = (list, label) => (LAYOUT[list].find(x => x[0] === label) || [null, []])[1];
+function initMap() {
+  const saved = S.map, used = new Set(), M = {};
+  const resolve = (savedCol, syns, u) => { if (savedCol && ST.colIndex[savedCol] !== undefined) { u && u.add(savedCol); return savedCol; } return guess(syns, u || new Set()); };
+  M.name = resolve(saved?.name, LAYOUT.name, null);
+  M.email = resolve(saved?.email, LAYOUT.email, null);
+  M.stt = resolve(saved?.stt, LAYOUT.stt, null);
+  M.pass = resolve(saved?.pass, LAYOUT.pass, null);
+  M.passLast = saved?.passLast ?? 6;
+  const totalsUsed = new Set();
+  M.incTotal = resolve(saved?.incTotal, LAYOUT.incTotal, totalsUsed);
+  M.dedTotal = resolve(saved?.dedTotal, LAYOUT.dedTotal, totalsUsed);
+  M.net = resolve(saved?.net, LAYOUT.net, totalsUsed);
+  const infoUsed = new Set(), moneyUsed = new Set([...totalsUsed, M.name, M.email, M.stt].filter(Boolean));
+  for (const list of ['info', 'inc', 'ded']) {
+    const u = list === 'info' ? infoUsed : moneyUsed;
+    const src = saved?.[list] || LAYOUT[list].map(([label]) => ({ label, col: '' }));
+    M[list] = src.map(it => ({ label: it.label, col: resolve(it.col, [it.label, ...defSyn(list, it.label)], u) }));
+  }
+  ST.map = M; S.map = M; saveSettings();
+  renderMap(); rebuild();
+}
+function colOptions(sel, noneLabel) {
+  let h = `<option value="">${esc(noneLabel)}</option>`;
+  ST.headers.forEach(t => { if (t) h += `<option value="${esc(t)}"${t === sel ? ' selected' : ''}>${esc(colLabel(t))}</option>`; });
+  return h;
+}
+function renderMap() {
+  const M = ST.map;
+  $$('[data-m]').forEach(el => {
+    const k = el.dataset.m;
+    if (k === 'passLast') { el.value = M.passLast; return; }
+    const none = ['incTotal', 'dedTotal', 'net'].includes(k) ? '(Tự tính)' : '— không dùng —';
+    el.innerHTML = colOptions(M[k], none);
+  });
+  for (const list of ['info', 'inc', 'ded']) {
+    $(`[data-list="${list}"]`).innerHTML = M[list].map((it, i) => `
+      <div class="mapitem"><input type="text" value="${esc(it.label)}" data-li="${list}" data-i="${i}" data-f="label" aria-label="Nhãn">
+      <select data-li="${list}" data-i="${i}" data-f="col" aria-label="Cột Excel">${colOptions(it.col, '— trống —')}</select>
+      <button class="icon-btn" data-del="${list}" data-i="${i}" title="Xóa dòng" aria-label="Xóa dòng">✕</button></div>`).join('');
+  }
+  const n = ST.rows.length;
+  $('#sheetInfo').textContent = `Đọc được ${n} người (bỏ qua dòng trống và dòng "Tổng cộng").`;
+}
+$('#mapWrap').addEventListener('change', e => {
+  const el = e.target, M = ST.map;
+  if (el.dataset.m) { M[el.dataset.m] = el.dataset.m === 'passLast' ? Math.max(0, +el.value || 0) : el.value; }
+  else if (el.dataset.li) { M[el.dataset.li][+el.dataset.i][el.dataset.f] = el.value; }
+  else return;
+  S.map = M; saveSettings(); rebuild();
+});
+$('#mapWrap').addEventListener('input', e => { const el = e.target; if (el.dataset.li && el.dataset.f === 'label') { ST.map[el.dataset.li][+el.dataset.i].label = el.value; S.map = ST.map; saveSettings(); rebuildSoon(); } });
+$('#mapWrap').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]'), add = e.target.closest('[data-add]');
+  if (del) { ST.map[del.dataset.del].splice(+del.dataset.i, 1); }
+  else if (add) { ST.map[add.dataset.add].push({ label: 'Khoản mới', col: '' }); }
+  else return;
+  S.map = ST.map; saveSettings(); renderMap(); rebuild();
+});
+let rbT; function rebuildSoon() { clearTimeout(rbT); rbT = setTimeout(rebuild, 400); }
+
+/* ========== dựng danh sách nhân viên ========== */
+const ID_LABEL = /cccd|can cuoc|cmnd|ma so thue|mst|so tk|tai khoan|stk|dien thoai|sdt|so dt|ma nv|ma can bo/;
+function cell(rec, key) { const i = ST.colIndex[key]; if (i === undefined) return { raw: null, txt: '' }; return { raw: rec.raw[i], txt: String(rec.txt[i] ?? '').trim() }; }
+function toNum(v, txt) {
+  if (typeof v === 'number') return v;
+  if (v === null || v === undefined || v === '') return null;
+  let s = String(v).trim().replace(/đ|vnđ|vnd|\s/gi, '');
+  if (s === '' || s === '-') return null;
+  if (/^-?\d{1,3}([.,]\d{3})+$/.test(s)) return +s.replace(/[.,]/g, '');
+  if (/^-?\d+([.,]\d+)?$/.test(s)) return +s.replace(',', '.');
+  return NaN;
+}
+function idText(label, v, txt) {
+  let s = (typeof v === 'number' && Number.isInteger(v)) ? String(v) : (txt || (v ?? '')).toString().trim();
+  const n = norm(label);
+  if (/^\d+$/.test(s)) {
+    if (/cccd|can cuoc/.test(n) && s.length === 11) s = '0' + s;
+    if (/ma so thue|mst/.test(n) && (s.length === 9 || s.length === 11)) s = '0' + s;
+  }
+  return s;
+}
+function infoVal(label, rec, key) {
+  const { raw, txt } = cell(rec, key);
+  if (raw === null || raw === undefined || raw === '') return txt;
+  if (ID_LABEL.test(norm(label)) || ID_LABEL.test(norm(key))) return idText(label + ' ' + key, raw, txt);
+  if (typeof raw === 'number') return Math.abs(raw) >= 1000 ? fmtMoney(raw) : (txt || String(raw));
+  if (raw instanceof Date) return `${pad2(raw.getDate())}/${pad2(raw.getMonth() + 1)}/${raw.getFullYear()}`;
+  return txt || String(raw);
+}
+function rebuild() {
+  if (!ST.map) return;
+  const M = ST.map, h = ST.headerRow, rows = [];
+  const iName = ST.colIndex[M.name];
+  for (let r = h + 1; r < ST.txt.length; r++) {
+    const raw = ST.raw[r] || [], txt = ST.txt[r] || [];
+    if (!txt.some(v => String(v).trim())) continue;
+    const name = iName !== undefined ? String(txt[iName] ?? '').trim() : '';
+    if (!name) continue;
+    const nn = norm(name);
+    if (/^(tong|cong|tong cong|nguoi lap|ke toan|thu truong|hieu truong)( |$)/.test(nn)) continue;
+    rows.push({ excelRow: r + 1, raw, txt });
+  }
+  ST.rows = rows;
+  const seen = {};
+  ST.emps = rows.map((rec, idx) => {
+    const e = { idx, excelRow: rec.excelRow, errors: [], warns: [] };
+    e.name = cell(rec, M.name).txt;
+    e.email = cell(rec, M.email).txt.replace(/\s+/g, '').replace(/^mailto:/i, '');
+    e.stt = M.stt ? (cell(rec, M.stt).txt) : '';
+    const pc = M.pass ? cell(rec, M.pass) : { raw: null, txt: '' };
+    let pw = M.pass ? idText(M.pass, pc.raw, pc.txt).replace(/\s+/g, '') : '';
+    if (M.passLast > 0 && pw.length > M.passLast) pw = pw.slice(-M.passLast);
+    e.pass = pw;
+    e.info = M.info.filter(it => it.label.trim()).map(it => [it.label.trim(), it.col ? infoVal(it.label, rec, it.col) : '']);
+    const money = (list) => M[list].filter(it => it.label.trim()).map(it => {
+      if (!it.col) return [it.label.trim(), null];
+      const c = cell(rec, it.col), n = toNum(c.raw, c.txt);
+      if (Number.isNaN(n)) { e.warns.push(`"${it.label}" không phải số (${c.txt})`); return [it.label.trim(), null]; }
+      return [it.label.trim(), n];
+    });
+    e.inc = money('inc'); e.ded = money('ded');
+    const sum = a => a.reduce((s, [, v]) => s + (v || 0), 0);
+    const sInc = sum(e.inc), sDed = sum(e.ded);
+    const pick = (key, calc, label) => {
+      if (!key) return calc;
+      const c = cell(rec, key), n = toNum(c.raw, c.txt);
+      if (n === null || Number.isNaN(n)) { e.warns.push(`Ô "${label}" trống/không phải số, dùng số tự tính`); return calc; }
+      if (Math.abs(n - calc) > 1) e.warns.push(`${label} trong Excel ${fmtMoney(n)} ≠ tự tính ${fmtMoney(calc)}`);
+      return n;
+    };
+    e.incTotal = pick(M.incTotal, sInc, 'Tổng thu nhập');
+    e.dedTotal = pick(M.dedTotal, sDed, 'Tổng khấu trừ');
+    e.net = pick(M.net, e.incTotal - e.dedTotal, 'Còn lại');
+    if (!M.email) e.errors.push('chưa chọn cột Email');
+    else if (!e.email) e.errors.push('không có email');
+    else if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e.email)) e.errors.push('email sai định dạng');
+    else { const k = e.email.toLowerCase(); if (seen[k]) e.errors.push(`email trùng với ${seen[k]}`); else seen[k] = e.name; }
+    if (S.mail.protect) { if (!M.pass) e.errors.push('chưa chọn cột mật khẩu'); else if (!e.pass) e.errors.push('không có mật khẩu PDF'); else if (e.pass.length < 4) e.warns.push('mật khẩu ngắn hơn 4 ký tự'); }
+    return e;
+  });
+  ST.emps.forEach(e => { const k = 'r' + e.excelRow; if (!(k in ST.include)) ST.include[k] = e.errors.length === 0; if (e.errors.length) ST.include[k] = false; });
+  $('#sheetInfo').textContent = `Đọc được ${ST.emps.length} người từ dòng ${h + 2} trở đi (đã bỏ qua dòng trống và dòng "Tổng cộng").`;
+  refreshStatus();
+}
+const isSendable = e => e.errors.length === 0 && ST.include['r' + e.excelRow];
+
+/* ========== bảng kiểm tra ========== */
+function statusHtml(e) {
+  const lg = LOG[logKey(e)];
+  let h = '';
+  if (lg?.status === 'sent') h += `<span class="badge sent">Đã gửi ${esc(lg.time)}</span>`;
+  else if (lg?.status === 'error') h += `<span class="badge err">Gửi lỗi</span><span class="reason">${esc(lg.error)}</span>`;
+  if (e.errors.length) h += `<span class="badge err">Lỗi</span><span class="reason">${esc(e.errors.join('; '))}</span>`;
+  else if (e.warns.length) h += `<span class="badge warn">Cảnh báo</span><span class="reason">${esc(e.warns.join('; '))}</span>`;
+  else if (!lg) h += `<span class="badge ok">Sẵn sàng</span>`;
+  return h;
+}
+function renderTable() {
+  const has = ST.emps.length > 0;
+  $('#p3Empty').classList.toggle('hidden', has); $('#p3Body').classList.toggle('hidden', !has);
+  if (!has) return;
+  const all = ST.emps, nErr = all.filter(e => e.errors.length).length, nWarn = all.filter(e => !e.errors.length && e.warns.length).length;
+  const nSent = all.filter(e => LOG[logKey(e)]?.status === 'sent').length, nSel = all.filter(isSendable).length;
+  const sumNet = all.filter(e => !e.errors.length).reduce((s, e) => s + (e.net || 0), 0);
+  $('#stats').innerHTML = `<div class="stat"><b>${all.length}</b><span>người trong file</span></div><div class="stat"><b>${nSel}</b><span>được chọn gửi</span></div><div class="stat"><b style="color:var(--err)">${nErr}</b><span>có lỗi</span></div><div class="stat"><b style="color:var(--warn)">${nWarn}</b><span>cảnh báo</span></div><div class="stat"><b>${nSent}</b><span>đã gửi kỳ này</span></div><div class="stat"><b>${fmtMoney(sumNet)}</b><span>tổng còn lại</span></div>`;
+  const q = norm(ST.q), f = ST.filter;
+  const list = all.filter(e => {
+    if (q && !norm(e.name + ' ' + e.email).includes(q)) return false;
+    const sent = LOG[logKey(e)]?.status === 'sent';
+    if (f === 'err') return e.errors.length > 0 || LOG[logKey(e)]?.status === 'error';
+    if (f === 'warn') return !e.errors.length && e.warns.length > 0;
+    if (f === 'sent') return sent;
+    if (f === 'todo') return !sent;
+    return true;
+  });
+  $('#tbody').innerHTML = list.map(e => `<tr class="${isSendable(e) ? '' : 'off'}">
+    <td><input type="checkbox" data-inc="${e.excelRow}" ${ST.include['r' + e.excelRow] ? 'checked' : ''} ${e.errors.length ? 'disabled' : ''} aria-label="Chọn"></td>
+    <td>${esc(e.stt)}</td><td><b>${esc(e.name)}</b><span class="reason">Dòng ${e.excelRow}</span></td><td>${esc(e.email)}</td>
+    <td class="num">${fmtMoney(e.net)}</td><td>${statusHtml(e)}</td>
+    <td><button class="btn small" data-view="${e.idx}">Xem</button></td></tr>`).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Không có ai khớp bộ lọc.</td></tr>`;
+  $('#chkAll').checked = all.filter(e => !e.errors.length).every(e => ST.include['r' + e.excelRow]);
+}
+$('#filters').addEventListener('click', e => { const c = e.target.closest('[data-f]'); if (!c) return; ST.filter = c.dataset.f; $$('#filters .chip').forEach(x => x.classList.toggle('on', x === c)); renderTable(); });
+$('#search').addEventListener('input', e => { ST.q = e.target.value; renderTable(); });
+$('#tbody').addEventListener('change', e => { const c = e.target.closest('[data-inc]'); if (!c) return; ST.include['r' + c.dataset.inc] = c.checked; renderTable(); });
+$('#chkAll').addEventListener('change', e => { ST.emps.forEach(x => { if (!x.errors.length) ST.include['r' + x.excelRow] = e.target.checked; }); renderTable(); });
+$('#tbody').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) preview(ST.emps[+b.dataset.view]); });
+
+/* ========== PDF ========== */
+function fileName(e) { return `PhieuLuong_${e.stt ? pad2(e.stt) + '_' : ''}${slug(e.name)}_${slug(S.org.period)}.pdf`; }
+function buildDoc(e, protect) {
+  const o = S.org, cellAmt = v => ({ text: v === null || v === undefined ? '' : fmtMoney(v), alignment: 'right' });
+  const head = [];
+  if (o.logo) head.push({ image: o.logo, fit: [78, 78], width: 82 });
+  head.push({ width: '*', stack: [
+    { text: (o.name || '').toUpperCase(), bold: true, fontSize: 12.5, alignment: o.logo ? 'left' : 'center', margin: [0, 8, 0, 0] },
+    e.stt ? { text: `STT:   ${e.stt}`, alignment: 'right', margin: [0, 8, 0, 0] } : { text: '' }
+  ] });
+  const info = [];
+  for (let i = 0; i < e.info.length; i += 2) {
+    const a = e.info[i], b = e.info[i + 1];
+    info.push([{ text: a[0] + ':', color: '#4a4a4a' }, { text: a[1] || '', bold: true },
+               b ? { text: b[0] + ':', color: '#4a4a4a' } : '', b ? { text: b[1] || '', bold: true } : '']);
+  }
+  const n = Math.max(e.inc.length, e.ded.length), body = [[
+    { text: 'THU NHẬP', colSpan: 2, bold: true, alignment: 'center', fillColor: '#e9eff6' }, {},
+    { text: 'KHẤU TRỪ', colSpan: 2, bold: true, alignment: 'center', fillColor: '#e9eff6' }, {}]];
+  for (let i = 0; i < n; i++) {
+    const a = e.inc[i], b = e.ded[i];
+    body.push([a ? a[0] : '', a ? cellAmt(a[1]) : '', b ? b[0] : '', b ? cellAmt(b[1]) : '']);
+  }
+  body.push([{ text: 'Tổng cộng', bold: true }, { ...cellAmt(e.incTotal), bold: true }, { text: 'Tổng cộng', bold: true }, { ...cellAmt(e.dedTotal), bold: true }]);
+  const lines = { hLineWidth: () => 0.8, vLineWidth: () => 0.8, hLineColor: () => '#7d8794', vLineColor: () => '#7d8794', paddingTop: () => 6, paddingBottom: () => 6, paddingLeft: () => 6, paddingRight: () => 6 };
+  const content = [
+    { columns: head, columnGap: 10 },
+    o.sub ? { text: o.sub, alignment: 'right', fontSize: 10, margin: [0, 6, 0, 0] } : null,
+    { text: `${o.title || ''} ${o.period || ''}`.trim(), fontSize: 17, bold: true, alignment: 'center', margin: [0, 18, 0, 0] },
+    o.note ? { text: o.note, alignment: 'center', fontSize: 12, margin: [0, 2, 0, 0] } : null,
+    info.length ? { table: { widths: ['auto', '*', 'auto', '*'], body: info }, layout: { ...lines, hLineWidth: () => 0, vLineWidth: () => 0, paddingTop: () => 3, paddingBottom: () => 3, paddingLeft: () => 0, paddingRight: () => 8 }, margin: [0, 16, 0, 0] } : null,
+    { table: { headerRows: 1, widths: ['*', 92, '*', 92], body }, layout: lines, margin: [0, 14, 0, 0] },
+    { table: { widths: ['auto'], body: [[{ text: [{ text: `${o.netLabel || 'Còn lại'}:   ` }, { text: fmtMoney(e.net), bold: true }], fontSize: 13.5, fillColor: '#fff176', margin: [4, 2, 8, 2] }]] }, layout: 'noBorders', margin: [0, 14, 0, 0] },
+    o.footer ? { text: o.footer, fontSize: 9, color: '#666', margin: [0, 18, 0, 0] } : null,
+    { text: `Ngày lập: ${today()}`, fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+  ].filter(Boolean);
+  const doc = { pageSize: 'A4', pageMargins: [42, 34, 42, 40], content,
+    defaultStyle: { font: 'Roboto', fontSize: 10.5, lineHeight: 1.15, color: '#111' },
+    info: { title: `Phiếu lương ${o.period} - ${e.name}`, author: o.name },
+    footer: () => ({ text: 'Tài liệu mật — chỉ dành cho người nhận', alignment: 'center', fontSize: 7.5, color: '#999', margin: [0, 14, 0, 0] }) };
+  if (protect) {
+    const rnd = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+    Object.assign(doc, { version: '1.7ext3', userPassword: e.pass, ownerPassword: rnd, permissions: { printing: 'highResolution', modifying: false, copying: false, annotating: false } });
+  }
+  return doc;
+}
+const pdfBase64 = (e, protect) => new Promise((res, rej) => { try { pdfMake.createPdf(buildDoc(e, protect)).getBase64(res); } catch (err) { rej(err); } });
+const pdfBlob = (e, protect) => new Promise((res, rej) => { try { pdfMake.createPdf(buildDoc(e, protect)).getBlob(res); } catch (err) { rej(err); } });
+let lastUrl;
+async function preview(e) {
+  try {
+    const blob = await pdfBlob(e, false);
+    if (lastUrl) URL.revokeObjectURL(lastUrl);
+    lastUrl = URL.createObjectURL(blob);
+    $('#mTitle').textContent = `${e.name} — xem trước (không mật khẩu)`;
+    $('#mFrame').src = lastUrl; $('#mOpen').href = lastUrl; $('#mDown').href = lastUrl; $('#mDown').download = fileName(e);
+    $('#modal').classList.add('show');
+  } catch (err) { console.error(err); toast('Không tạo được PDF: ' + err.message); }
+}
+$('#mClose').onclick = () => { $('#modal').classList.remove('show'); $('#mFrame').src = 'about:blank'; };
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#mClose').click(); });
+const SAMPLE = { idx: -1, excelRow: 0, stt: '22', name: 'Nguyễn Văn A', email: 'a@example.com', pass: '123456', errors: [], warns: [],
+  info: [['Họ và tên', 'Nguyễn Văn A'], ['Công tác', 'Học vụ'], ['Lương CB', '10.620.000'], ['Mã số thuế', '001234567890'], ['CCCD', '001234567890'], ['Số TK', '0123456789 MSB'], ['Mail', 'a@example.com']],
+  inc: [['Lương', 15000000], ['Phụ cấp trách nhiệm - Thâm niên', 200000], ['Phụ cấp ngoài giờ', 2540000], ['Phụ cấp giảng dạy', null], ['Phụ cấp khác', 6200000]],
+  ded: [['Đã nhận đợt 1', null], ['BHXH-YT-CĐ-BHTN', 1168200], ['Thuế TNCN', 0], ['Hoàn trả tạm ứng', null]],
+  incTotal: 23940000, dedTotal: 1168200, net: 22771800 };
+$('#btnSample').onclick = () => preview(SAMPLE);
+$('#btnZip').onclick = async () => {
+  const list = ST.emps.filter(isSendable); if (!list.length) return toast('Chưa chọn ai.');
+  const b = $('#btnZip'); b.disabled = true;
+  try { const zip = new JSZip();
+    for (let i = 0; i < list.length; i++) { b.textContent = `Đang tạo ${i + 1}/${list.length}…`; zip.file(fileName(list[i]), await pdfBase64(list[i], S.mail.protect), { base64: true }); }
+    dl(await zip.generateAsync({ type: 'blob' }), `PhieuLuong_${slug(S.org.period)}.zip`);
+  } catch (err) { toast('Lỗi tạo file zip: ' + err.message); }
+  b.disabled = false; b.textContent = 'Tải tất cả PDF (.zip)';
+};
+$('#btnTemplate').onclick = e => {
+  e.preventDefault();
+  const head = ['STT', 'Họ và tên', 'Công tác', 'Lương CB', 'Mã số thuế', 'CCCD', 'Số TK', 'Ngân hàng', 'Email', 'Lương', 'PC trách nhiệm - Thâm niên', 'PC ngoài giờ', 'PC giảng dạy', 'PC khác', 'Tổng thu nhập', 'Đã nhận đợt 1', 'BHXH-YT-CĐ-BHTN', 'Thuế TNCN', 'Hoàn trả tạm ứng', 'Tổng khấu trừ', 'Còn lại'];
+  const ws = XLSX.utils.aoa_to_sheet([head, [1, 'Nguyễn Văn A', 'Học vụ', 10620000, '001234567890', '001234567890', '0123456789', 'MSB', 'email@example.com', 15000000, 200000, 2540000, 0, 6200000, null, 0, 1168200, 0, 0, null, null]]);
+  ws['O2'] = { f: 'SUM(J2:N2)', t: 'n' }; ws['T2'] = { f: 'SUM(P2:S2)', t: 'n' }; ws['U2'] = { f: 'O2-T2', t: 'n' };
+  ['E2', 'F2', 'G2'].forEach(a => { ws[a].t = 's'; ws[a].z = '@'; });
+  ws['!cols'] = head.map((h, i) => ({ wch: i === 1 ? 22 : i === 8 ? 26 : 14 }));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Bang luong'); XLSX.writeFile(wb, 'Mau_bang_luong.xlsx');
+};
+
+/* ========== Google / Gmail ========== */
+const SCOPE_SEND = 'https://www.googleapis.com/auth/gmail.send';
+const G = { client: null, token: null, exp: 0, email: '', pending: null };
+function resetGoogle() { G.client = null; }
+function refreshG() {
+  const on = !!G.token && Date.now() < G.exp;
+  $('#gDot').classList.toggle('on', on);
+  $('#gText').textContent = on ? G.email || 'Đã đăng nhập' : (G.email ? 'Phiên đăng nhập đã hết hạn' : 'Chưa đăng nhập Google');
+  $('#btnLogin').textContent = on ? 'Đăng nhập lại' : 'Đăng nhập Google';
+  $('#btnLogin').classList.toggle('primary', !on);
+  $('#btnLogout').classList.toggle('hidden', !on);
+  if (!$('#testTo').value && G.email) $('#testTo').value = G.email;
+  $('#gNote').innerHTML = on ? `✅ Đã kết nối Gmail <b>${esc(G.email)}</b>.` : 'Sau khi lưu Client ID, bấm <b>Đăng nhập Google</b> ở góc trên.';
+  $('#gNote').className = 'note ' + (on ? 'ok' : 'info');
+  if ($('#p4').classList.contains('show')) renderSend();
+}
+function login() {
+  return new Promise((resolve, reject) => {
+    const cid = (S.google.clientId || '').trim();
+    if (location.protocol === 'file:') { toast('Cần mở trang qua GitHub Pages mới đăng nhập được.'); return reject(new Error('file')); }
+    if (!cid) { toast('Hãy dán Google Client ID ở Bước 1 trước.'); go(1); return reject(new Error('noid')); }
+    if (!window.google?.accounts?.oauth2) { toast('Chưa tải được thư viện đăng nhập Google. Kiểm tra mạng rồi tải lại trang.'); return reject(new Error('gis')); }
+    if (!G.client || G.client._cid !== cid) {
+      G.client = google.accounts.oauth2.initTokenClient({ client_id: cid, scope: SCOPE_SEND + ' openid email',
+        callback: async (r) => {
+          const p = G.pending; G.pending = null;
+          if (r.error) { toast('Đăng nhập không thành công: ' + r.error); p?.reject(new Error(r.error)); return; }
+          if (!google.accounts.oauth2.hasGrantedAllScopes(r, SCOPE_SEND)) { toast('Bạn chưa tick quyền "Gửi email thay mặt bạn". Hãy đăng nhập lại và tick ô đó.', 7000); p?.reject(new Error('scope')); return; }
+          G.token = r.access_token; G.exp = Date.now() + (Number(r.expires_in || 3600) - 90) * 1000;
+          try { const u = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + G.token } }); if (u.ok) G.email = (await u.json()).email || G.email; } catch (e) {}
+          refreshG(); toast('Đã đăng nhập ' + (G.email || 'Google'));
+          p?.resolve();
+        },
+        error_callback: (err) => { const p = G.pending; G.pending = null; toast(err?.type === 'popup_closed' ? 'Bạn đã đóng cửa sổ đăng nhập.' : 'Trình duyệt chặn cửa sổ đăng nhập. Hãy cho phép cửa sổ bật lên (pop-up).', 5000); p?.reject(new Error(err?.type || 'popup')); }
+      });
+      G.client._cid = cid;
+    }
+    G.pending = { resolve, reject };
+    G.client.requestAccessToken({ prompt: G.email ? '' : 'consent', hint: G.email || undefined });
+  });
+}
+$('#btnLogin').onclick = () => login().catch(() => {});
+$('#btnLogout').onclick = () => { try { if (G.token) google.accounts.oauth2.revoke(G.token, () => {}); } catch (e) {} G.token = null; G.exp = 0; G.email = ''; refreshG(); toast('Đã thoát Google.'); };
+setInterval(refreshG, 30000);
+
+/* ---- tạo email MIME ---- */
+function b64bytes(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+const b64utf8 = s => b64bytes(new TextEncoder().encode(s));
+const encWord = s => /^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${b64utf8(s)}?=`;
+const wrap76 = s => s.replace(/.{1,76}/g, '$&\r\n');
+function fillTpl(tpl, e) {
+  let t = tpl;
+  if (!S.mail.protect) t = t.split('\n').filter(l => !l.includes('{goi_y_mat_khau}')).join('\n');
+  const v = { ho_ten: e.name, ky_luong: S.org.period, don_vi: S.org.name, nguoi_gui: S.mail.senderName, goi_y_mat_khau: S.mail.hint, con_lai: fmtMoney(e.net), stt: e.stt };
+  return t.replace(/\{(\w+)\}/g, (m, k) => k in v ? (v[k] ?? '') : m);
+}
+async function buildRaw(e, to, prefix = '') {
+  const pdf = await pdfBase64(e, S.mail.protect), b = 'pl_' + Math.random().toString(36).slice(2);
+  const fromName = (S.mail.senderName || '').replace(/["\\]/g, '');
+  const hdr = [
+    G.email ? `From: ${encWord(fromName)} <${G.email}>` : null,
+    `To: ${to}`, `Subject: ${encWord(prefix + fillTpl(S.mail.subject, e).replace(/[\r\n]+/g, ' '))}`,
+    'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${b}"`
+  ].filter(Boolean).join('\r\n');
+  const fn = fileName(e);
+  const msg = `${hdr}\r\n\r\n--${b}\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64utf8(fillTpl(S.mail.body, e).replace(/\r?\n/g, '\r\n')))}\r\n--${b}\r\nContent-Type: application/pdf; name="${fn}"\r\nContent-Disposition: attachment; filename="${fn}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(pdf)}\r\n--${b}--\r\n`;
+  return btoa(msg).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+class SendErr extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
+async function gmailSend(raw) {
+  let r;
+  try { r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', { method: 'POST', headers: { Authorization: 'Bearer ' + G.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }) }); }
+  catch (e) { throw new SendErr('Mất kết nối mạng', 'net'); }
+  if (r.ok) return (await r.json()).id;
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  const m = j.error?.message || r.statusText || ('HTTP ' + r.status), reason = j.error?.errors?.[0]?.reason || '';
+  if (r.status === 401) throw new SendErr('Phiên đăng nhập Google hết hạn', 'auth');
+  if (r.status === 429 || /rateLimit|dailyLimit|quota/i.test(reason + m)) throw new SendErr(/retry after/i.test(m) || /daily/i.test(reason + m) ? 'Gmail báo đã hết hạn mức gửi hôm nay' : 'Gửi quá nhanh, Gmail yêu cầu chậm lại', /retry after|daily/i.test(reason + m) ? 'quota' : 'rate');
+  if (r.status === 403) throw new SendErr('Không có quyền gửi: ' + m, 'auth');
+  throw new SendErr(m, 'bad');
+}
+
+/* ========== gửi ========== */
+const RUN = { on: false, paused: false, stop: false, wake: null, wait: null };
+function addLog(text, isErr) { const l = $('#log'); if (l.dataset.empty !== '0') { l.innerHTML = ''; l.dataset.empty = '0'; } const d = document.createElement('div'); d.innerHTML = `<span class="t">${timeNow()}</span><span class="${isErr ? 'e' : ''}">${esc(text)}</span>`; l.prepend(d); }
+function queue() { return ST.emps.filter(e => isSendable(e) && LOG[logKey(e)]?.status !== 'sent'); }
+function renderSend() {
+  const opts = ST.emps.filter(e => !e.errors.length).map(e => `<option value="${e.idx}">${esc(e.name)}${e.stt ? ' (STT ' + esc(e.stt) + ')' : ''}</option>`).join('');
+  const sel = $('#testEmp'), cur = sel.value; sel.innerHTML = opts || '<option value="">— chưa có dữ liệu —</option>'; if (cur) sel.value = cur;
+  const need = [];
+  if (!ST.emps.length) need.push('tải file Excel ở <a href="#" data-go="2">Bước 2</a>');
+  if (!(G.token && Date.now() < G.exp)) need.push('bấm <b>Đăng nhập Google</b> ở góc trên');
+  $('#p4Need').innerHTML = need.length ? 'Để gửi được, hãy ' + need.join(' và ') + '.' : '';
+  $('#p4Need').classList.toggle('hidden', !need.length);
+  const sel2 = ST.emps.filter(isSendable), q = queue(), skip = sel2.length - q.length;
+  const nErr = ST.emps.filter(e => e.errors.length).length, nOff = ST.emps.filter(e => !e.errors.length && !ST.include['r' + e.excelRow]).length;
+  const mins = Math.ceil(q.length * (Math.max(1, +S.mail.delay || 3) + 1.5) / 60);
+  $('#sendSummary').innerHTML = !ST.emps.length ? 'Chưa có dữ liệu.' :
+    `Kỳ <b>${esc(S.org.period)}</b>: sẽ gửi <b>${q.length}</b> người` + (skip ? `, bỏ qua ${skip} người đã nhận` : '') + (nErr ? `, ${nErr} người có lỗi` : '') + (nOff ? `, ${nOff} người bỏ chọn` : '') + (q.length ? `. Ước tính ${mins} phút.` : '.') + (q.length > 480 ? '<br><span style="color:var(--warn)">Hơn 480 người: Gmail miễn phí có thể dừng giữa chừng, phần còn lại gửi vào hôm sau.</span>' : '');
+  $('#btnStart').disabled = RUN.on || !q.length;
+  $('#btnTest').disabled = RUN.on || !ST.emps.length;
+}
+function refreshStatus() { markDone(); if ($('#p3').classList.contains('show')) renderTable(); if ($('#p4').classList.contains('show')) renderSend(); }
+async function ensureToken() {
+  if (G.token && Date.now() < G.exp) return;
+  throw new SendErr('Phiên đăng nhập Google hết hạn', 'auth');
+}
+$('#btnTest').onclick = async () => {
+  const e = ST.emps[+$('#testEmp').value], to = $('#testTo').value.trim();
+  if (!e) return toast('Chọn phiếu cần gửi thử.');
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(to)) return toast('Nhập địa chỉ nhận thử hợp lệ.');
+  const b = $('#btnTest'); b.disabled = true; b.textContent = 'Đang gửi…';
+  try {
+    if (!(G.token && Date.now() < G.exp)) await login();
+    await gmailSend(await buildRaw(e, to, '[GỬI THỬ] '));
+    addLog(`Gửi thử phiếu của ${e.name} → ${to}`); toast('Đã gửi thử. Mở hộp thư để kiểm tra.');
+  } catch (err) { addLog(`Gửi thử thất bại: ${err.message}`, true); toast('Gửi thử thất bại: ' + err.message, 6000); }
+  b.disabled = false; b.textContent = 'Gửi thử'; renderSend();
+};
+function setProg(done, total, extra) { $('#barFill').style.width = total ? (100 * done / total).toFixed(1) + '%' : '0'; $('#progText').innerHTML = extra; }
+const waitResume = () => new Promise(r => { RUN.wait = r; });
+$('#btnPause').onclick = () => {
+  if (!RUN.paused) { RUN.paused = true; $('#btnPause').textContent = 'Tiếp tục'; addLog('Đã tạm dừng.'); }
+  else { const go2 = async () => { if (!(G.token && Date.now() < G.exp)) { try { await login(); } catch (e) { return; } } RUN.paused = false; $('#btnPause').textContent = 'Tạm dừng'; addLog('Tiếp tục gửi.'); RUN.wait?.(); RUN.wait = null; }; go2(); }
+};
+$('#btnStop').onclick = () => { if (!confirm('Dừng hẳn việc gửi? Những người chưa gửi có thể gửi tiếp sau.')) return; RUN.stop = true; RUN.paused = false; RUN.wait?.(); RUN.wait = null; };
+window.addEventListener('beforeunload', e => { if (RUN.on) { e.preventDefault(); e.returnValue = ''; } });
+$('#btnStart').onclick = async () => {
+  const list = queue(); if (!list.length) return toast('Không còn ai cần gửi.');
+  try { if (!(G.token && Date.now() < G.exp)) await login(); } catch (e) { return; }
+  if (!confirm(`Gửi phiếu lương ${S.org.period} cho ${list.length} người từ tài khoản ${G.email || 'Google của bạn'}?`)) return;
+  Object.assign(RUN, { on: true, paused: false, stop: false });
+  $('#btnPause').classList.remove('hidden'); $('#btnStop').classList.remove('hidden'); $('#btnPause').textContent = 'Tạm dừng'; renderSend();
+  try { RUN.wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
+  let ok = 0, bad = 0, netFails = 0; const t0 = Date.now();
+  addLog(`Bắt đầu gửi ${list.length} email.`);
+  for (let i = 0; i < list.length; i++) {
+    if (RUN.stop) break;
+    if (RUN.paused) { setProg(i, list.length, `Đang tạm dừng ở ${i}/${list.length}. Bấm <b>Tiếp tục</b>.`); await waitResume(); if (RUN.stop) break; }
+    const e = list[i];
+    const left = Math.round((Date.now() - t0) / Math.max(1, i) * (list.length - i) / 60000);
+    setProg(i, list.length, `Đang gửi ${i + 1}/${list.length}: <b>${esc(e.name)}</b> · ✅ ${ok} · ❌ ${bad}${i ? ` · còn khoảng ${left} phút` : ''}`);
+    let attempt = 0;
+    while (true) {
+      try {
+        await ensureToken();
+        const id = await gmailSend(await buildRaw(e, e.email));
+        LOG[logKey(e)] = { status: 'sent', time: timeNow() + ' ' + today(), id, name: e.name, email: e.email, stt: e.stt, period: S.org.period };
+        ok++; netFails = 0; addLog(`✅ ${e.name} <${e.email}>`); break;
+      } catch (err) {
+        const k = err.kind || 'bad';
+        if (k === 'auth') { addLog('⛔ ' + err.message + '. Bấm Tiếp tục để đăng nhập lại.', true); RUN.paused = true; $('#btnPause').textContent = 'Tiếp tục'; setProg(i, list.length, '⛔ Phiên đăng nhập hết hạn. Bấm <b>Tiếp tục</b> để đăng nhập lại.'); await waitResume(); if (RUN.stop) break; continue; }
+        if (k === 'rate' && attempt < 2) { attempt++; addLog('Gmail yêu cầu chậm lại, chờ 60 giây…'); await sleep(60000); continue; }
+        if (k === 'net' && attempt < 2) { attempt++; netFails++; addLog('Mất mạng, thử lại sau 10 giây…', true); await sleep(10000); continue; }
+        LOG[logKey(e)] = { status: 'error', time: timeNow() + ' ' + today(), error: err.message, name: e.name, email: e.email, stt: e.stt, period: S.org.period };
+        bad++; addLog(`❌ ${e.name} <${e.email}>: ${err.message}`, true);
+        if (k === 'quota') { RUN.stop = true; addLog('⛔ Gmail đã dừng vì hết hạn mức trong ngày. Hôm sau mở lại trang và bấm gửi tiếp.', true); }
+        if (k === 'net') { RUN.paused = true; $('#btnPause').textContent = 'Tiếp tục'; addLog('⛔ Mạng không ổn định, đã tạm dừng. Kiểm tra mạng rồi bấm Tiếp tục.', true); }
+        break;
+      }
+    }
+    lsSet(LS_LOG, LOG);
+    if (RUN.stop) break;
+    if (i < list.length - 1) await sleep(Math.max(1, +S.mail.delay || 3) * 1000);
+  }
+  RUN.on = false; try { RUN.wake?.release(); } catch (e) {}
+  $('#btnPause').classList.add('hidden'); $('#btnStop').classList.add('hidden');
+  const total = ok + bad;
+  setProg(total, list.length, `<b>Xong.</b> ✅ ${ok} thành công · ❌ ${bad} lỗi${total < list.length ? ` · ${list.length - total} chưa gửi` : ''}. ${bad || total < list.length ? 'Bấm <b>Bắt đầu gửi</b> lần nữa để gửi tiếp cho người còn lại.' : ''}`);
+  addLog(`Kết thúc: ${ok} thành công, ${bad} lỗi.`);
+  lsSet(LS_LOG, LOG); renderSend(); markDone();
+  if (ok) toast(`Đã gửi ${ok} email. Nhớ tải báo cáo để lưu lại.`, 5000);
+};
+$('#btnReport').onclick = () => {
+  if (!ST.emps.length) return toast('Chưa có dữ liệu.');
+  const rows = ST.emps.map(e => { const l = LOG[logKey(e)]; return { 'Kỳ lương': S.org.period, 'Dòng Excel': e.excelRow, 'STT': e.stt, 'Họ và tên': e.name, 'Email': e.email, 'Còn lại': e.net, 'Trạng thái': l?.status === 'sent' ? 'Đã gửi' : l?.status === 'error' ? 'Gửi lỗi' : e.errors.length ? 'Không gửi (lỗi dữ liệu)' : ST.include['r' + e.excelRow] ? 'Chưa gửi' : 'Không chọn', 'Thời gian': l?.time || '', 'Ghi chú': l?.error || e.errors.join('; ') || e.warns.join('; ') }; });
+  const ws = XLSX.utils.json_to_sheet(rows); ws['!cols'] = [{ wch: 14 }, { wch: 9 }, { wch: 6 }, { wch: 24 }, { wch: 28 }, { wch: 13 }, { wch: 22 }, { wch: 20 }, { wch: 50 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Bao cao'); XLSX.writeFile(wb, `Bao_cao_gui_luong_${slug(S.org.period)}.xlsx`);
+};
+$('#btnClearLog').onclick = () => {
+  const p = S.org.period; if (!confirm(`Xóa lịch sử gửi của kỳ "${p}"? Sau đó bấm gửi sẽ gửi lại cho tất cả.`)) return;
+  for (const k of Object.keys(LOG)) if (k.startsWith(p + '|')) delete LOG[k];
+  lsSet(LS_LOG, LOG); renderSend(); toast('Đã xóa lịch sử kỳ này.');
+};
+
+/* ========== khởi động ========== */
+if (location.protocol === 'file:') $('#fileWarn').classList.remove('hidden');
+window.addEventListener('load', () => {
+  const miss = [!window.XLSX && 'đọc Excel', !window.pdfMake && 'tạo PDF', !window.JSZip && 'nén zip'].filter(Boolean);
+  if (miss.length) { $('#libWarn').textContent = 'Không tải được thư viện: ' + miss.join(', ') + '. Kiểm tra kết nối mạng rồi tải lại trang.'; $('#libWarn').classList.remove('hidden'); }
+});
+bindSettings(); refreshG(); markDone();
+</script>
+</body>
+</html>
