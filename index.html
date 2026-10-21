@@ -306,6 +306,35 @@ table.list td b{color:#1d3554}
   .mapitem .icon-btn{grid-column:2;grid-row:1 / span 2}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- phần cuối trang (trang chủ) ---------- */
+body:not([data-step="1"]) .extras{display:none}
+.extras{display:flex;flex-direction:column;gap:18px;margin-top:22px}
+.feats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:10px;box-shadow:var(--shadow)}
+.feat{display:flex;gap:16px;align-items:center;border-radius:14px;padding:18px 20px}
+.feat .ficon{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;flex:none}
+.feat .ficon span{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.feat .ficon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.feat b{display:block;font-size:16px;letter-spacing:-.01em;margin-bottom:2px}
+.feat p{margin:0;font-size:13px;color:#4f6178;line-height:1.55}
+.feat.green{background:#eef8f1}.feat.green .ficon{background:#d6f0de}.feat.green .ficon span{background:#16883f}.feat.green b{color:#167443}
+.feat.blue{background:#eef4ff}.feat.blue .ficon{background:#d9e6ff}.feat.blue .ficon span{background:#2563eb}.feat.blue b{color:#1d4ed8}
+.feat.violet{background:#f3f0ff}.feat.violet .ficon{background:#e4dcff}.feat.violet .ficon span{background:#5b3fd0}.feat.violet b{color:#4c32b8}
+.feat.blue .ficon svg{fill:#fff;stroke:none}
+.hero{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:28px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px 28px 14px 14px;box-shadow:var(--shadow)}
+.hero-art{background:linear-gradient(160deg,#eef4ff,#f7faff);border-radius:16px;aspect-ratio:16/10;display:grid;place-items:center;overflow:hidden}
+.hero-art svg{width:100%;height:100%}
+.hero h2{font-size:clamp(24px,2.6vw,30px);margin:0 0 4px}
+.hero-sub{margin:0 0 8px;font-size:16px;font-weight:600;color:#203754}
+.hero-txt{margin:0 0 14px;color:var(--muted);max-width:760px}
+.ticks{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px 28px}
+.ticks li{display:flex;align-items:center;gap:9px;font-size:13.5px;color:#26384f;font-weight:500}
+.ticks li::before{content:"";width:22px;height:22px;border-radius:50%;flex:none;background:#16883f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E") center/14px no-repeat}
+@media (max-width:900px){
+  .feats{grid-template-columns:minmax(0,1fr)}
+  .hero{grid-template-columns:minmax(0,1fr);padding:14px 14px 22px}
+  .hero-text{padding:0 8px}
+}
 </style>
 </head>
 <body data-step="1">
@@ -329,6 +358,8 @@ table.list td b{color:#1d3554}
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6L9.5 22l9-11.5h-6z"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><path d="m5.5 12.5 4.2 4.2L18.5 8"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
 </svg>
 
@@ -706,6 +737,45 @@ table.list td b{color:#1d3554}
         </ul>
       </div>
     </aside>
+    </div>
+
+    <div class="extras" aria-label="Giới thiệu">
+      <div class="feats">
+        <div class="feat green"><div class="ficon"><span><svg viewBox="0 0 24 24"><use href="#i-tick"/></svg></span></div><div><b>Dễ sử dụng</b><p>Quy trình 4 bước đơn giản, giao diện thân thiện</p></div></div>
+        <div class="feat blue"><div class="ficon"><span><svg viewBox="0 0 24 24"><use href="#i-bolt"/></svg></span></div><div><b>Tiết kiệm thời gian</b><p>Tự động tạo và gửi phiếu lương hàng loạt</p></div></div>
+        <div class="feat violet"><div class="ficon"><span><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg></span></div><div><b>An toàn, bảo mật</b><p>Dữ liệu chỉ xử lý trên trình duyệt, không lưu trên máy chủ</p></div></div>
+      </div>
+      <div class="hero">
+        <div class="hero-art">
+          <svg viewBox="0 0 320 200" role="img" aria-label="Minh họa phiếu lương gửi qua email">
+            <circle cx="236" cy="70" r="62" fill="#dfeaff"/>
+            <circle cx="70" cy="150" r="40" fill="#e8f0ff"/>
+            <path d="M40 182c-2-26 6-46 22-58-4 18-6 36-6 58z" fill="#9cc7a8"/>
+            <path d="M52 182c4-30 18-48 36-54-10 16-16 34-20 54z" fill="#7fb592"/>
+            <path d="M30 182c-6-18-4-34 6-44 0 14 2 30 6 44z" fill="#b5d8be"/>
+            <rect x="96" y="30" width="122" height="150" rx="10" fill="#c9dafc"/>
+            <rect x="106" y="22" width="122" height="150" rx="10" fill="#fff" stroke="#d3e0f5"/>
+            <rect x="106" y="22" width="122" height="26" rx="10" fill="#2563eb"/><rect x="106" y="36" width="122" height="12" fill="#2563eb"/>
+            <rect x="118" y="31" width="58" height="7" rx="3.5" fill="#fff" opacity=".9"/>
+            <rect x="118" y="60" width="44" height="6" rx="3" fill="#c3d3ea"/><rect x="118" y="72" width="70" height="6" rx="3" fill="#dfe8f5"/>
+            <path d="M118 128l18-14 14 8 18-20 18 10 18-16v36h-86z" fill="#dbe7ff"/>
+            <path d="M118 128l18-14 14 8 18-20 18 10 18-16" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="118" y="144" width="98" height="16" rx="5" fill="#fff6c2"/><rect x="124" y="149" width="34" height="6" rx="3" fill="#e0b400"/><rect x="176" y="149" width="34" height="6" rx="3" fill="#163b65"/>
+            <g transform="translate(218 118)"><rect width="76" height="52" rx="8" fill="#fff" stroke="#d3e0f5"/><path d="M4 6l34 24 34-24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="66" cy="46" r="13" fill="#16883f"/><path d="m60 46 4 4 8-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>
+            <path d="M262 30l38-12-14 36-8-14z" fill="#fff" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/><path d="M278 40l22-22" stroke="#2563eb" stroke-width="2"/>
+            <path d="M246 46c6-4 10-8 14-14" fill="none" stroke="#9db8e8" stroke-width="2" stroke-dasharray="3 4" stroke-linecap="round"/>
+            <g><ellipse cx="88" cy="176" rx="20" ry="6" fill="#d39b00"/><rect x="68" y="160" width="40" height="16" fill="#f2c230"/><ellipse cx="88" cy="160" rx="20" ry="6" fill="#ffd95a"/>
+              <rect x="70" y="148" width="40" height="12" fill="#f2c230"/><ellipse cx="90" cy="148" rx="20" ry="6" fill="#ffe27a"/><text x="90" y="151" text-anchor="middle" font-size="9" font-weight="700" fill="#b07d00" font-family="Arial">đ</text></g>
+          </svg>
+        </div>
+        <div class="hero-text">
+          <h2>Phiếu Lương NK</h2>
+          <p class="hero-sub">Giải pháp gửi phiếu lương tự động, nhanh chóng và an toàn</p>
+          <p class="hero-txt">Giúp nhà trường tiết kiệm thời gian, giảm sai sót và bảo mật thông tin lương của cán bộ, giáo viên, nhân viên. Tất cả trong một quy trình đơn giản, trực quan và dễ sử dụng.</p>
+          <ul class="ticks"><li>Tạo phiếu lương PDF từ file Excel</li><li>Gửi email hàng loạt qua Gmail</li><li>Xem trước và kiểm tra từng phiếu</li></ul>
+        </div>
+      </div>
     </div>
   </main>
 </div>
