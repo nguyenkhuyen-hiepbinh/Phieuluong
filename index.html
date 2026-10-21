@@ -7,10 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/build/pdfmake.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/build/vfs_fonts.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/pdfmake.min.js"></script>
+<script src="lib/vfs_fonts.js"></script>
+<script src="lib/jszip.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
@@ -161,6 +161,14 @@ table.list tr.off td{opacity:.55}
 .kbd{display:inline-block;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:13px;background:var(--surface-2)}
 .footer-actions{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
 details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}
+.hist{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow)}
+.hist>summary{cursor:pointer;padding:14px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none}
+.hist>summary::-webkit-details-marker{display:none}
+.hist>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+.hist[open]>summary::before{transform:rotate(90deg)}
+.hist>summary b{font-size:15px;margin-right:auto}
+.hist .inner{padding:0 16px 16px}
+.hist .tablebox{max-height:420px;overflow:auto}
 </style>
 </head>
 <body>
@@ -184,6 +192,7 @@ details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 
     <button class="step" data-go="2"><b>2</b>Dữ liệu Excel</button>
     <button class="step" data-go="3"><b>3</b>Kiểm tra</button>
     <button class="step" data-go="4"><b>4</b>Gửi email</button>
+    <button class="step" data-go="5"><b>5</b>Lịch sử</button>
     <button class="step" data-go="guide"><b>?</b>Hướng dẫn cài đặt</button>
   </nav>
 
@@ -368,8 +377,25 @@ details.adv summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 
           <button class="btn small" id="btnReport">Tải báo cáo (.xlsx)</button>
           <button class="btn small ghost" id="btnClearLog">Xóa lịch sử kỳ này</button>
         </div>
+        <p class="sub" style="margin:-4px 0 10px">Đổi máy hoặc lỡ xóa dữ liệu trình duyệt? Vào tab <a href="#" data-go="5">Lịch sử</a> để nạp lại báo cáo cũ trước khi gửi, tránh gửi trùng.</p>
         <div class="log" id="log"><div><span class="t">—</span><span>Chưa có hoạt động.</span></div></div>
       </div>
+    </section>
+
+    <!-- LỊCH SỬ -->
+    <section class="page" id="p5">
+      <h2>Lịch sử gửi các kỳ</h2>
+      <p class="lead">Ai đã nhận phiếu lương, vào lúc nào. Lịch sử lưu trên trình duyệt này và không chứa số tiền.</p>
+      <div class="card" style="margin-bottom:16px">
+        <h3>Sao lưu và khôi phục</h3>
+        <p class="sub">Đổi máy hoặc lỡ xóa dữ liệu trình duyệt? Nạp lại các file báo cáo đã tải về ở Bước 4 hoặc file "toàn bộ lịch sử". Có thể chọn nhiều file cùng lúc.</p>
+        <div class="row">
+          <label class="btn primary">Nạp báo cáo cũ (.xlsx)<input type="file" id="histFile" accept=".xlsx,.xls" multiple hidden></label>
+          <button class="btn" id="btnHistExport">Tải toàn bộ lịch sử (.xlsx)</button>
+        </div>
+        <div id="histMsg" style="margin-top:12px"></div>
+      </div>
+      <div id="histList"></div>
     </section>
 
     <!-- HƯỚNG DẪN -->
@@ -521,6 +547,7 @@ function go(step) {
   markDone();
   if (step === 3) renderTable();
   if (step === 4) renderSend();
+  if (step === 5) renderHistory();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); go(isNaN(+g.dataset.go) ? g.dataset.go : +g.dataset.go); } });
@@ -1107,6 +1134,79 @@ $('#btnClearLog').onclick = () => {
   for (const k of Object.keys(LOG)) if (k.startsWith(p + '|')) delete LOG[k];
   lsSet(LS_LOG, LOG); renderSend(); toast('Đã xóa lịch sử kỳ này.');
 };
+
+
+/* ========== lịch sử các kỳ ========== */
+function parseT(t) { const m = /(\d+):(\d+):(\d+)\s+(\d+)\/(\d+)\/(\d+)/.exec(t || ''); return m ? new Date(+m[6], m[5] - 1, +m[4], +m[1], +m[2], +m[3]).getTime() : 0; }
+function periodsOf() {
+  const g = {};
+  for (const [k, v] of Object.entries(LOG)) { const p = v.period || k.split('|')[0]; (g[p] ||= []).push({ ...v, period: p, email: v.email || k.split('|').slice(1).join('|') }); }
+  return Object.entries(g).map(([p, list]) => ({ p, list: list.sort((a, b) => (parseFloat(a.stt) || 1e9) - (parseFloat(b.stt) || 1e9) || String(a.name).localeCompare(String(b.name), 'vi')), last: Math.max(0, ...list.map(x => parseT(x.time))) })).sort((a, b) => b.last - a.last);
+}
+function histRows(list) { return list.map(v => ({ 'Kỳ lương': v.period, 'STT': v.stt || '', 'Họ và tên': v.name || '', 'Email': v.email, 'Trạng thái': v.status === 'sent' ? 'Đã gửi' : 'Gửi lỗi', 'Thời gian': v.time || '', 'Ghi chú': v.error || '' })); }
+function exportHist(list, name) {
+  const ws = XLSX.utils.json_to_sheet(histRows(list)); ws['!cols'] = [{ wch: 16 }, { wch: 6 }, { wch: 24 }, { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 40 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Lich su'); XLSX.writeFile(wb, name);
+}
+function renderHistory() {
+  const ps = periodsOf(), box = $('#histList');
+  if (!ps.length) { box.innerHTML = '<div class="note info">Chưa có lịch sử gửi nào trên trình duyệt này. Nếu đã gửi ở máy khác, hãy nạp lại file báo cáo.</div>'; return; }
+  box.innerHTML = ps.map((g, gi) => {
+    const ok = g.list.filter(x => x.status === 'sent').length, bad = g.list.length - ok;
+    const lastTxt = g.last ? g.list.reduce((a, b) => parseT(b.time) > parseT(a.time) ? b : a).time : '';
+    return `<details class="hist"${gi === 0 ? ' open' : ''}><summary><b>${esc(g.p)}</b>
+      <span class="badge sent">✅ ${ok} đã gửi</span>${bad ? `<span class="badge err">❌ ${bad} lỗi</span>` : ''}
+      ${lastTxt ? `<span class="reason" style="margin:0">Lần cuối: ${esc(lastTxt)}</span>` : ''}</summary>
+      <div class="inner"><div class="toolbar">
+        <input type="text" placeholder="Tìm tên hoặc email…" data-hq="${gi}" style="flex:1 1 180px;max-width:280px">
+        <button class="btn small" data-hx="${gi}">Tải báo cáo kỳ này</button>
+        <button class="btn small danger" data-hd="${gi}">Xóa kỳ này</button></div>
+        <div class="tablebox"><table class="list"><thead><tr><th>STT</th><th>Họ và tên</th><th>Email</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+        <tbody>${g.list.map(v => `<tr data-hs="${esc(norm((v.name || '') + ' ' + v.email))}"><td>${esc(v.stt || '')}</td><td><b>${esc(v.name || '')}</b></td><td>${esc(v.email)}</td>
+          <td>${v.status === 'sent' ? '<span class="badge sent">Đã gửi</span>' : `<span class="badge err">Gửi lỗi</span><span class="reason">${esc(v.error || '')}</span>`}${v.restored ? '<span class="reason">(nạp từ báo cáo)</span>' : ''}</td>
+          <td>${esc(v.time || '')}</td></tr>`).join('')}</tbody></table></div></div></details>`;
+  }).join('');
+  box._ps = ps;
+}
+$('#histList').addEventListener('input', e => { const q = e.target.dataset.hq; if (q === undefined) return; const n = norm(e.target.value); $$('tr[data-hs]', e.target.closest('.hist')).forEach(tr => tr.classList.toggle('hidden', !!n && !tr.dataset.hs.includes(n))); });
+$('#histList').addEventListener('click', e => {
+  const ps = $('#histList')._ps || [], x = e.target.closest('[data-hx]'), d = e.target.closest('[data-hd]');
+  if (x) { const g = ps[+x.dataset.hx]; exportHist(g.list, `Lich_su_${slug(g.p)}.xlsx`); }
+  if (d) { const g = ps[+d.dataset.hd]; if (!confirm(`Xóa lịch sử kỳ "${g.p}" khỏi trình duyệt này? Nên tải báo cáo kỳ này về trước.`)) return;
+    for (const [k, v] of Object.entries(LOG)) if ((v.period || k.split('|')[0]) === g.p) delete LOG[k];
+    lsSet(LS_LOG, LOG); renderHistory(); refreshStatus(); toast('Đã xóa lịch sử kỳ ' + g.p); }
+});
+$('#btnHistExport').onclick = () => { const all = periodsOf().flatMap(g => g.list); if (!all.length) return toast('Chưa có lịch sử để tải.'); exportHist(all, `Lich_su_gui_luong_${today().replace(/\//g, '-')}.xlsx`); };
+$('#histFile').addEventListener('change', async e => {
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+  let add = 0, skip = 0; const okF = [], badF = [], per = new Set();
+  for (const f of files) {
+    try {
+      const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' }); let found = false;
+      for (const n of wb.SheetNames) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: '', raw: false });
+        if (!rows.length || !['Kỳ lương', 'Email', 'Trạng thái'].every(h => h in rows[0])) continue;
+        found = true;
+        for (const r of rows) {
+          const period = String(r['Kỳ lương']).trim(), email = String(r['Email']).replace(/\s+/g, ''), st = String(r['Trạng thái']).trim();
+          const status = st === 'Đã gửi' ? 'sent' : st === 'Gửi lỗi' ? 'error' : null;
+          if (!period || !email || !status) continue;
+          const k = `${period}|${email.toLowerCase()}`, cur = LOG[k];
+          if (cur && (cur.status === 'sent' || status === 'error')) { skip++; continue; }
+          LOG[k] = { status, time: String(r['Thời gian'] || ''), name: String(r['Họ và tên'] || ''), email, stt: String(r['STT'] || ''), period, restored: true, ...(status === 'error' ? { error: String(r['Ghi chú'] || '') } : {}) };
+          add++; per.add(period);
+        }
+      }
+      (found ? okF : badF).push(f.name);
+    } catch (err) { badF.push(f.name); }
+  }
+  const saved = lsSet(LS_LOG, LOG);
+  $('#histMsg').innerHTML = `<div class="note ${badF.length || !saved ? 'warn' : 'ok'}" style="margin:0">` +
+    (okF.length ? `Đã nạp ${okF.length} file: thêm <b>${add}</b> dòng lịch sử${per.size ? ` (kỳ ${esc([...per].join(', '))})` : ''}${skip ? `, bỏ qua ${skip} dòng đã có` : ''}.` : '') +
+    (badF.length ? `<br>Không đọc được: ${esc(badF.join(', '))} — file phải có các cột "Kỳ lương", "Email", "Trạng thái".` : '') +
+    (!saved ? '<br>⚠️ Trình duyệt không cho lưu, lịch sử sẽ mất khi tải lại trang.' : '') + '</div>';
+  renderHistory(); refreshStatus();
+});
 
 /* ========== khởi động ========== */
 if (location.protocol === 'file:') $('#fileWarn').classList.remove('hidden');
